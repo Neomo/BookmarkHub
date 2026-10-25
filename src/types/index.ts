@@ -16,6 +16,14 @@ export interface Bookmark {
   color?: string;
 }
 
+export type CategoryCoverType = 'solid' | 'gradient' | 'image';
+
+export interface CategoryCover {
+  type: CategoryCoverType;
+  value: string; // Hex color for solid, CSS gradient string, or image URL
+  textColor?: 'light' | 'dark'; // for text readability
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -24,6 +32,8 @@ export interface Category {
   description?: string;
   color?: string;
   parentId?: string | null; // null or undefined indicates top-level (level 1), string indicates level 2 subcategory
+  cover?: CategoryCover;
+  subViewOverride?: 'default' | 'expanded' | 'collapsed';
 }
 
 export type ViewMode = 'card' | 'list' | 'group';
@@ -53,6 +63,35 @@ export interface ExportData {
   version: string;
   exportedAt: number;
   source: string;
+  categories: Category[];
+  bookmarks: Bookmark[];
+}
+
+export interface SystemSettings {
+  defaultTheme: ThemeMode;
+  defaultViewMode: ViewMode;
+  enableDailyPicks: boolean;
+  defaultSortOption: SortOption;
+  defaultSubCategoriesView: 'expanded' | 'collapsed';
+  openInNewTab: boolean;
+  autoArchiveMonths: number;
+}
+
+export interface SystemConfigBackup {
+  version: string;
+  exportedAt: number;
+  source: string;
+  type: 'config';
+  categories: Category[];
+  settings: SystemSettings;
+}
+
+export interface FullBackupData {
+  version: string;
+  exportedAt: number;
+  source: string;
+  type: 'full';
+  settings: SystemSettings;
   categories: Category[];
   bookmarks: Bookmark[];
 }

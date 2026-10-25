@@ -5,6 +5,7 @@ import { Bookmark, Category } from '../types';
 import { SortableBookmarkCard } from './SortableBookmarkCard';
 import { CategoryIcon } from './CategoryIcon';
 import { buildCategoryTree, CategoryTreeItem } from '../utils/storage';
+import { getCoverStyle } from '../utils/coverPresets';
 import {
   ChevronDown,
   ChevronRight,
@@ -12,6 +13,7 @@ import {
   CornerDownRight,
   X,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 
 interface BookmarkGroupViewProps {
@@ -26,6 +28,7 @@ interface BookmarkGroupViewProps {
   onRecordClick: (bookmark: Bookmark) => void;
   onSelectTag?: (tag: string) => void;
   onShowQrCode?: (bookmark: Bookmark) => void;
+  globalDefaultSubView?: 'expanded' | 'collapsed';
 }
 
 // Droppable subcategory tab for horizontal filter row
@@ -74,7 +77,7 @@ const DroppableSubcategoryTab: React.FC<{
   );
 };
 
-// Droppable header for 1st level category
+// Droppable header for 1st level category (supports Cover background)
 const DroppableRootHeader: React.FC<{
   rootCat: CategoryTreeItem;
   totalCount: number;
@@ -89,6 +92,56 @@ const DroppableRootHeader: React.FC<{
       categoryName: rootCat.name,
     },
   });
+
+  const hasCover = Boolean(rootCat.cover?.value);
+  const coverStyle = getCoverStyle(rootCat.cover);
+
+  if (hasCover) {
+    return (
+      <div
+        ref={setNodeRef}
+        onClick={onToggleCollapse}
+        style={coverStyle}
+        className={`relative overflow-hidden flex items-center justify-between p-3 sm:p-4 rounded-xl cursor-pointer select-none group transition-all duration-200 shadow-sm ${
+          isOver
+            ? 'ring-2 ring-neutral-900 dark:ring-neutral-100 scale-[1.01]'
+            : 'hover:brightness-98 dark:hover:brightness-105'
+        }`}
+      >
+        {/* Backdrop tint for perfect text contrast */}
+        <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+
+        <div className="relative z-10 flex items-center gap-2.5">
+          <button
+            type="button"
+            className="p-1 -ml-1 text-white/80 group-hover:text-white rounded transition-colors"
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          <div className="w-7 h-7 rounded-lg bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shadow-xs">
+            <CategoryIcon name={rootCat.icon} className="w-4 h-4" />
+          </div>
+          <h2 className="text-base font-bold text-white drop-shadow-xs tracking-wide">
+            {rootCat.name}
+          </h2>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-xs text-white/90 tabular-nums font-mono">
+            {totalCount} 个网址
+          </span>
+
+          {isOver && (
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-300 animate-pulse ml-2">
+              <CornerDownRight className="w-3.5 h-3.5" />
+              <span>松开移入此一级分类</span>
+            </span>
+          )}
+        </div>
+
+        <span className="relative z-10 text-xs text-white/80 group-hover:text-white transition-colors bg-black/20 backdrop-blur-xs px-2.5 py-1 rounded-md">
+          {isCollapsed ? '展开目录' : '折叠目录'}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -147,8 +200,10 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
   onRecordClick,
   onSelectTag,
   onShowQrCode,
+  globalDefaultSubView = 'expanded',
 }) => {
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+  const [collapsedSubcategoryBars, setCollapsedSubcategoryBars] = useState<Record<string, boolean>>({});
   // Selected subcategories per root category: key = rootCat.id, value = subcategory IDs
   const [selectedSubcategories, setSelectedSubcategories] = useState<Record<string, string[]>>({});
 
@@ -157,6 +212,32 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
       ...prev,
       [catId]: !prev[catId],
     }));
+  };
+
+  const isSubcategoryBarCollapsed = (rootCat: CategoryTreeItem) => {
+    if (collapsedSubcategoryBars[rootCat.id] !== undefined) {
+      return collapsedSubcategoryBars[rootCat.id];
+    }
+    if (rootCat.subViewOverride === 'collapsed') return true;
+    if (rootCat.subViewOverride === 'expanded') return false;
+    return globalDefaultSubView === 'collapsed';
+  };
+
+  const toggleSubcategoryBar = (rootCatId: string) => {
+    setCollapsedSubcategoryBars((prev) => {
+      const rootCat = categories.find((c) => c.id === rootCatId);
+      const defaultState =
+        rootCat?.subViewOverride === 'collapsed'
+          ? true
+          : rootCat?.subViewOverride === 'expanded'
+          ? false
+          : globalDefaultSubView === 'collapsed';
+      const current = prev[rootCatId] !== undefined ? prev[rootCatId] : defaultState;
+      return {
+        ...prev,
+        [rootCatId]: !current,
+      };
+    });
   };
 
   // Build complete 2-level category hierarchy
@@ -174,19 +255,15 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
     }
   }, [activeCategoryId, categories]);
 
-  // Determine which root categories to display:
-  // If activeCategoryId is an 1st level category -> only show that 1st level category (and all its subcategories!)
-  // If activeCategoryId is a 2nd level subcategory -> show its parent 1st level category (focused on that subcategory)
-  // If null -> show all root categories
+  // Determine which root categories to display
   const displayRoots = fullCategoryTree.filter((root) => {
     if (!activeCategoryId) return true;
     if (root.id === activeCategoryId) return true;
-    // If activeCategoryId is a child of this root
     if (root.children.some((child) => child.id === activeCategoryId)) return true;
     return false;
   });
 
-  // Calculate uncategorized bookmarks: only those whose categoryId is not in categories at all
+  // Calculate uncategorized bookmarks
   const allCategoryIds = new Set(categories.map((c) => c.id));
   const uncategorizedBookmarks = bookmarks.filter((b) => !allCategoryIds.has(b.categoryId));
 
@@ -229,6 +306,8 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
             ? allRootBookmarks
             : allRootBookmarks.filter((b) => selectedSubs.includes(b.categoryId));
 
+        const subBarCollapsed = isSubcategoryBarCollapsed(rootCat);
+
         return (
           <section key={rootCat.id} className="space-y-4">
             {/* 1st Level Category Header (Droppable) */}
@@ -240,52 +319,79 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
             />
 
             {!isCollapsed && (
-              <div className="space-y-4">
-                {/* Horizontal Subcategory Filter Bar (arranged horizontally under 1st level category) */}
+              <div className="space-y-3">
+                {/* Horizontal Subcategory Filter Bar */}
                 {rootCat.children.length > 0 && (
-                  <div className="flex items-center flex-wrap gap-2 py-1">
-                    {/* "全部" Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleClearSubFilter(rootCat.id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${
-                        selectedSubs.length === 0
-                          ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 shadow-xs'
-                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
-                      }`}
-                    >
-                      全部 ({allRootBookmarks.length})
-                    </button>
-
-                    {/* Horizontal Subcategory Tabs (Multi-selectable & Droppable!) */}
-                    {rootCat.children.map((sub) => {
-                      const subCount = allRootBookmarks.filter(
-                        (b) => b.categoryId === sub.id
-                      ).length;
-                      const isSelected = selectedSubs.includes(sub.id);
-
-                      return (
-                        <DroppableSubcategoryTab
-                          key={sub.id}
-                          sub={sub}
-                          count={subCount}
-                          isSelected={isSelected}
-                          onToggle={() => handleToggleSubcategory(rootCat.id, sub.id)}
-                        />
-                      );
-                    })}
-
-                    {/* Quick Clear Filter Button */}
-                    {selectedSubs.length > 0 && (
+                  <div className="space-y-1.5 py-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5 text-neutral-400">
+                        <span className="text-[11px] font-medium">二级专区 ({rootCat.children.length}):</span>
+                        {subBarCollapsed && selectedSubs.length > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-mono">
+                            已选 {selectedSubs.length} 个
+                          </span>
+                        )}
+                      </div>
                       <button
                         type="button"
-                        onClick={() => handleClearSubFilter(rootCat.id)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-xs text-neutral-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors ml-1"
-                        title="清空当前多选的二级分类"
+                        onClick={() => toggleSubcategoryBar(rootCat.id)}
+                        className="text-[11px] text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 flex items-center gap-0.5 transition-colors"
                       >
-                        <X className="w-3.5 h-3.5" />
-                        <span>清除选择 ({selectedSubs.length})</span>
+                        <span>{subBarCollapsed ? '展开二级' : '折叠二级'}</span>
+                        {subBarCollapsed ? (
+                          <ChevronRight className="w-3 h-3" />
+                        ) : (
+                          <ChevronDown className="w-3 h-3" />
+                        )}
                       </button>
+                    </div>
+
+                    {!subBarCollapsed && (
+                      <div className="flex items-center flex-wrap gap-2 pt-0.5 animate-in fade-in">
+                        {/* "全部" Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleClearSubFilter(rootCat.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${
+                            selectedSubs.length === 0
+                              ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 shadow-xs'
+                              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200'
+                          }`}
+                        >
+                          全部 ({allRootBookmarks.length})
+                        </button>
+
+                        {/* Horizontal Subcategory Tabs */}
+                        {rootCat.children.map((sub) => {
+                          const subCount = allRootBookmarks.filter(
+                            (b) => b.categoryId === sub.id
+                          ).length;
+                          const isSelected = selectedSubs.includes(sub.id);
+
+                          return (
+                            <DroppableSubcategoryTab
+                              key={sub.id}
+                              sub={sub}
+                              count={subCount}
+                              isSelected={isSelected}
+                              onToggle={() => handleToggleSubcategory(rootCat.id, sub.id)}
+                            />
+                          );
+                        })}
+
+                        {/* Quick Clear Filter Button */}
+                        {selectedSubs.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleClearSubFilter(rootCat.id)}
+                            className="flex items-center gap-1 px-2.5 py-1 text-xs text-neutral-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors ml-1"
+                            title="清空当前多选的二级分类"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>清除选择 ({selectedSubs.length})</span>
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}

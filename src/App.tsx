@@ -19,7 +19,7 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Bookmark, Category, ViewMode, SortOption } from './types';
+import { Bookmark, Category, ViewMode, SortOption, SystemSettings } from './types';
 import {
   loadBookmarks,
   saveBookmarks,
@@ -31,6 +31,9 @@ import {
   archiveInactiveBookmarks,
   ARCHIVED_CATEGORY_ID,
   ARCHIVED_CATEGORY,
+  loadSystemSettings,
+  saveSystemSettings,
+  DEFAULT_SYSTEM_SETTINGS,
 } from './utils/storage';
 import { matchBookmark } from './utils/pinyin';
 import { extractDomain, getFaviconUrl } from './utils/url';
@@ -49,6 +52,7 @@ import { ImportExportModal } from './components/ImportExportModal';
 import { CommandPalette } from './components/CommandPalette';
 import { QrCodeModal } from './components/QrCodeModal';
 import { MobileNav } from './components/MobileNav';
+import { AdminDashboard, AdminTab } from './components/admin/AdminDashboard';
 import { ToastProvider, useToast } from './components/Toast';
 import {
   Search,
@@ -65,8 +69,21 @@ function BookmarkHubApp() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // System Settings state
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => {
+    return loadSystemSettings();
+  });
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [adminInitialTab, setAdminInitialTab] = useState<AdminTab>('categories');
+
   // View & Filter states
-  const [viewMode, setViewMode] = useState<ViewMode>('card');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('bookmarkhub_view_mode') as ViewMode | null;
+      if (saved && ['card', 'list', 'group'].includes(saved)) return saved;
+    }
+    return 'card';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
   const [showOnlyStarred, setShowOnlyStarred] = useState(false);
@@ -101,6 +118,9 @@ function BookmarkHubApp() {
   // Dark mode
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
+      const savedSettings = loadSystemSettings();
+      if (savedSettings.defaultTheme === 'dark') return true;
+      if (savedSettings.defaultTheme === 'light') return false;
       const saved = localStorage.getItem('bookmarkhub_theme_mode');
       if (saved) return saved === 'dark';
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -138,10 +158,34 @@ function BookmarkHubApp() {
     return closestCenter(args);
   };
 
+  // Apply theme mode ('light' | 'dark' | 'system')
+  const applyThemeMode = (mode: 'light' | 'dark' | 'system') => {
+    let shouldBeDark = false;
+    if (mode === 'dark') {
+      shouldBeDark = true;
+    } else if (mode === 'light') {
+      shouldBeDark = false;
+    } else {
+      shouldBeDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    setIsDark(shouldBeDark);
+    if (typeof document !== 'undefined') {
+      if (shouldBeDark) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('bookmarkhub_theme_mode', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('bookmarkhub_theme_mode', 'light');
+      }
+    }
+  };
+
   // Load from local storage on mount & check auto-archive for bookmarks with no clicks in last 6 months
   useEffect(() => {
     const loadedCats = loadCategories();
     const loadedBms = loadBookmarks();
+    const loadedSettings = loadSystemSettings();
+    setSystemSettings(loadedSettings);
 
     const autoArchive = localStorage.getItem('bookmarkhub_auto_archive_enabled') !== 'false';
     if (autoArchive) {
@@ -169,18 +213,36 @@ function BookmarkHubApp() {
     const savedView = localStorage.getItem('bookmarkhub_view_mode') as ViewMode | null;
     if (savedView && ['card', 'list', 'group'].includes(savedView)) {
       setViewMode(savedView);
+    } else if (loadedSettings.defaultViewMode) {
+      setViewMode(loadedSettings.defaultViewMode);
     }
+
+    applyThemeMode(loadedSettings.defaultTheme);
     setIsLoaded(true);
   }, []);
+
+  // Listen to system dark mode preference changes if mode is 'system'
+  useEffect(() => {
+    if (systemSettings.defaultTheme !== 'system') return;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsDark(e.matches);
+      if (e.matches) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [systemSettings.defaultTheme]);
 
   // Sync dark class on documentElement
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('bookmarkhub_theme_mode', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('bookmarkhub_theme_mode', 'light');
     }
   }, [isDark]);
 
@@ -216,7 +278,32 @@ function BookmarkHubApp() {
   };
 
   const handleToggleTheme = () => {
-    setIsDark((prev) => !prev);
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    const newMode = nextDark ? 'dark' : 'light';
+    const updatedSettings: SystemSettings = { ...systemSettings, defaultTheme: newMode };
+    setSystemSettings(updatedSettings);
+    saveSystemSettings(updatedSettings);
+    if (nextDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('bookmarkhub_theme_mode', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('bookmarkhub_theme_mode', 'light');
+    }
+  };
+
+  const handleUpdateSettings = (newSettings: SystemSettings) => {
+    setSystemSettings(newSettings);
+    saveSystemSettings(newSettings);
+    applyThemeMode(newSettings.defaultTheme);
+    setViewMode(newSettings.defaultViewMode);
+    localStorage.setItem('bookmarkhub_view_mode', newSettings.defaultViewMode);
+  };
+
+  const handleOpenAdmin = (tab: AdminTab = 'categories') => {
+    setAdminInitialTab(tab);
+    setIsAdminOpen(true);
   };
 
   const handleChangeViewMode = (mode: ViewMode) => {
@@ -612,6 +699,59 @@ function BookmarkHubApp() {
     );
   }
 
+  // Full-page focused Admin Console
+  if (isAdminOpen) {
+    return (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col font-sans">
+        <AdminDashboard
+          bookmarks={bookmarks}
+          categories={categories}
+          settings={systemSettings}
+          currentTheme={systemSettings.defaultTheme}
+          onClose={() => setIsAdminOpen(false)}
+          onUpdateBookmarks={updateBookmarks}
+          onUpdateCategories={updateCategories}
+          onUpdateSettings={handleUpdateSettings}
+          onApplyTheme={(theme) => {
+            const updated = { ...systemSettings, defaultTheme: theme };
+            setSystemSettings(updated);
+            saveSystemSettings(updated);
+            applyThemeMode(theme);
+          }}
+          onEditBookmark={(bookmark) => {
+            setBookmarkToEdit(bookmark);
+            setIsAddEditOpen(true);
+          }}
+          onShowQrCode={handleShowQrCode}
+          initialTab={adminInitialTab}
+        />
+
+        {/* Modal overlays accessible from admin */}
+        <AddEditModal
+          isOpen={isAddEditOpen}
+          onClose={() => {
+            setIsAddEditOpen(false);
+            setBookmarkToEdit(null);
+          }}
+          onSave={handleSaveBookmark}
+          bookmarkToEdit={bookmarkToEdit}
+          categories={categories}
+          availableTags={allTags}
+          initialCategoryId={activeCategoryId || undefined}
+        />
+
+        <QrCodeModal
+          isOpen={isQrModalOpen}
+          onClose={() => {
+            setIsQrModalOpen(false);
+            setQrBookmark(null);
+          }}
+          bookmark={qrBookmark}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col font-sans">
       {/* Top Bar Header */}
@@ -625,6 +765,7 @@ function BookmarkHubApp() {
         onOpenStatsModal={() => setIsStatsModalOpen(true)}
         onOpenImportExportModal={() => setIsImportExportOpen(true)}
         onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
+        onOpenAdmin={() => handleOpenAdmin('categories')}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         onToggleSidebarMobile={() => setIsSidebarMobileOpen((prev) => !prev)}
         isDark={isDark}
@@ -673,6 +814,7 @@ function BookmarkHubApp() {
             allTags={allTags}
             onOpenCategoryModal={() => setIsCategoryModalOpen(true)}
             onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
+            onOpenAdmin={() => handleOpenAdmin('categories')}
             isOpenMobile={isSidebarMobileOpen}
             onCloseMobile={() => setIsSidebarMobileOpen(false)}
             isDraggingBookmark={!!activeDragBookmark}
@@ -685,15 +827,17 @@ function BookmarkHubApp() {
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {/* 1. Daily Picks Banner: Shows one random unvisited bookmarked URL every day */}
-            <DailyPicksBanner
-              bookmarks={bookmarks}
-              categories={categories}
-              onRecordClick={handleRecordClick}
-              onShowQrCode={handleShowQrCode}
-              onSelectCategory={(catId) => setActiveCategoryId(catId)}
-              onSelectTag={(tag) => setSelectedTag(tag)}
-            />
+            {/* 1. Daily Picks Banner: Shows one random unvisited bookmarked URL every day (if enabled in settings) */}
+            {systemSettings.enableDailyPicks && (
+              <DailyPicksBanner
+                bookmarks={bookmarks}
+                categories={categories}
+                onRecordClick={handleRecordClick}
+                onShowQrCode={handleShowQrCode}
+                onSelectCategory={(catId) => setActiveCategoryId(catId)}
+                onSelectTag={(tag) => setSelectedTag(tag)}
+              />
+            )}
 
             {/* Inactive Archive Banner if currently browsing '已归档' category */}
             {activeCategoryId === ARCHIVED_CATEGORY_ID && (
@@ -957,6 +1101,7 @@ function BookmarkHubApp() {
                       onRecordClick={handleRecordClick}
                       onSelectTag={(tag) => setSelectedTag(tag)}
                       onShowQrCode={handleShowQrCode}
+                      globalDefaultSubView={systemSettings.defaultSubCategoriesView}
                     />
                   )}
                 </>
@@ -1138,6 +1283,7 @@ function BookmarkHubApp() {
         onOpenStatsModal={() => setIsStatsModalOpen(true)}
         onOpenImportExportModal={() => setIsImportExportOpen(true)}
         onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
+        onOpenAdmin={(tab) => handleOpenAdmin((tab as AdminTab) || 'categories')}
         onToggleTheme={handleToggleTheme}
         isDark={isDark}
       />

@@ -13,6 +13,7 @@ import {
   Download,
   Menu,
   Archive,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -22,6 +23,7 @@ interface HeaderProps {
   onOpenStatsModal: () => void;
   onOpenImportExportModal: () => void;
   onOpenArchiveModal?: () => void;
+  onOpenAdmin?: () => void;
   onOpenCommandPalette: () => void;
   onToggleSidebarMobile: () => void;
   isDark: boolean;
@@ -36,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenStatsModal,
   onOpenImportExportModal,
   onOpenArchiveModal,
+  onOpenAdmin,
   onOpenCommandPalette,
   onToggleSidebarMobile,
   isDark,
@@ -151,6 +154,18 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
         )}
+
+        {onOpenAdmin && (
+          <button
+            type="button"
+            onClick={onOpenAdmin}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-neutral-900 dark:text-neutral-100 font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+            title="系统全方位管理后台"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>管理后台</span>
+          </button>
+        )}
       </nav>
 
       {/* Zone 3: Search trigger & 1 primary CTA button */}
@@ -167,6 +182,17 @@ export const Header: React.FC<HeaderProps> = ({
             ⌘K
           </kbd>
         </button>
+
+        {onOpenAdmin && (
+          <button
+            type="button"
+            onClick={onOpenAdmin}
+            className="md:hidden p-1.5 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+            title="系统全方位管理后台"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
+        )}
 
         <button
           type="button"

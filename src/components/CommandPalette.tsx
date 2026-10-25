@@ -29,6 +29,7 @@ interface CommandPaletteProps {
   onOpenStatsModal: () => void;
   onOpenImportExportModal: () => void;
   onOpenArchiveModal?: () => void;
+  onOpenAdmin?: (tab?: string) => void;
   onToggleTheme: () => void;
   isDark: boolean;
 }
@@ -45,6 +46,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenStatsModal,
   onOpenImportExportModal,
   onOpenArchiveModal,
+  onOpenAdmin,
   onToggleTheme,
   isDark,
 }) => {
@@ -130,6 +132,41 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: '数据',
       icon: Download,
       action: onOpenImportExportModal,
+    },
+    {
+      id: 'act-admin',
+      title: '打开系统全方位管理后台',
+      category: '管理',
+      icon: FolderCog,
+      action: () => onOpenAdmin?.('categories'),
+    },
+    {
+      id: 'act-admin-table',
+      title: '网址数据表格与批量管理',
+      category: '管理',
+      icon: ListPlus,
+      action: () => onOpenAdmin?.('bookmarks'),
+    },
+    {
+      id: 'act-admin-tags',
+      title: '全局标签管理与清洗',
+      category: '管理',
+      icon: FolderCog,
+      action: () => onOpenAdmin?.('tags'),
+    },
+    {
+      id: 'act-admin-settings',
+      title: '页面显示与系统偏好设置',
+      category: '设置',
+      icon: FolderCog,
+      action: () => onOpenAdmin?.('settings'),
+    },
+    {
+      id: 'act-admin-backup',
+      title: '数据全量备份与容灾恢复',
+      category: '数据',
+      icon: Download,
+      action: () => onOpenAdmin?.('backup'),
     },
     {
       id: 'act-theme',

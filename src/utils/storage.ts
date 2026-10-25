@@ -1,36 +1,111 @@
-import { Bookmark, Category, ExportData, ImportDiff, ImportMode } from '../types';
+import {
+  Bookmark,
+  Category,
+  ExportData,
+  ImportDiff,
+  ImportMode,
+  SystemSettings,
+  SystemConfigBackup,
+  FullBackupData,
+} from '../types';
 
 const STORAGE_KEYS = {
   BOOKMARKS: 'bookmarkhub_bookmarks_v1',
   CATEGORIES: 'bookmarkhub_categories_v2',
   VIEW_MODE: 'bookmarkhub_view_mode',
   THEME_MODE: 'bookmarkhub_theme_mode',
+  SYSTEM_SETTINGS: 'bookmarkhub_system_settings_v1',
 };
 
 export const DEFAULT_CATEGORIES: Category[] = [
   // 1. 人工智能
-  { id: 'cat-ai', name: '人工智能', icon: 'Sparkles', order: 1, color: '#6366f1', parentId: null },
+  {
+    id: 'cat-ai',
+    name: '人工智能',
+    icon: 'Sparkles',
+    order: 1,
+    color: '#6366f1',
+    parentId: null,
+    cover: {
+      type: 'gradient',
+      value: 'linear-gradient(135deg, #1e3a8a 0%, #0284c7 50%, #06b6d4 100%)',
+      textColor: 'light',
+    },
+    subViewOverride: 'expanded',
+  },
   { id: 'cat-ai-chat', name: '大模型与交互', icon: 'Sparkles', order: 2, color: '#6366f1', parentId: 'cat-ai' },
   { id: 'cat-ai-models', name: '开源模型社区', icon: 'Cpu', order: 3, color: '#6366f1', parentId: 'cat-ai' },
 
   // 2. 开发工具
-  { id: 'cat-dev', name: '开发工具', icon: 'Code', order: 4, color: '#0ea5e9', parentId: null },
+  {
+    id: 'cat-dev',
+    name: '开发工具',
+    icon: 'Code',
+    order: 4,
+    color: '#0ea5e9',
+    parentId: null,
+    cover: {
+      type: 'gradient',
+      value: 'linear-gradient(135deg, #1e293b 0%, #334155 50%, #0ea5e9 100%)',
+      textColor: 'light',
+    },
+    subViewOverride: 'expanded',
+  },
   { id: 'cat-dev-repo', name: '代码托管协作', icon: 'Code', order: 5, color: '#0ea5e9', parentId: 'cat-dev' },
   { id: 'cat-dev-frontend', name: '前端与框架', icon: 'Layers', order: 6, color: '#0ea5e9', parentId: 'cat-dev' },
   { id: 'cat-dev-docs', name: '技术离线文档', icon: 'Terminal', order: 7, color: '#0ea5e9', parentId: 'cat-dev' },
 
   // 3. 设计资源
-  { id: 'cat-design', name: '设计资源', icon: 'Palette', order: 8, color: '#ec4899', parentId: null },
+  {
+    id: 'cat-design',
+    name: '设计资源',
+    icon: 'Palette',
+    order: 8,
+    color: '#ec4899',
+    parentId: null,
+    cover: {
+      type: 'gradient',
+      value: 'linear-gradient(135deg, #ea580c 0%, #db2777 50%, #7c3aed 100%)',
+      textColor: 'light',
+    },
+    subViewOverride: 'expanded',
+  },
   { id: 'cat-design-ui', name: '界面与原型协同', icon: 'Palette', order: 9, color: '#ec4899', parentId: 'cat-design' },
   { id: 'cat-design-inspire', name: '创意灵感社区', icon: 'Compass', order: 10, color: '#ec4899', parentId: 'cat-design' },
 
   // 4. 资讯阅读
-  { id: 'cat-read', name: '资讯阅读', icon: 'BookOpen', order: 11, color: '#f59e0b', parentId: null },
+  {
+    id: 'cat-read',
+    name: '资讯阅读',
+    icon: 'BookOpen',
+    order: 11,
+    color: '#f59e0b',
+    parentId: null,
+    cover: {
+      type: 'gradient',
+      value: 'linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)',
+      textColor: 'light',
+    },
+    subViewOverride: 'expanded',
+  },
   { id: 'cat-read-tech', name: '开发者技术社区', icon: 'Globe', order: 12, color: '#f59e0b', parentId: 'cat-read' },
   { id: 'cat-read-news', name: '极客与数字生活', icon: 'BookOpen', order: 13, color: '#f59e0b', parentId: 'cat-read' },
 
   // 5. 高效办公
-  { id: 'cat-work', name: '高效办公', icon: 'Zap', order: 14, color: '#10b981', parentId: null },
+  {
+    id: 'cat-work',
+    name: '高效办公',
+    icon: 'Zap',
+    order: 14,
+    color: '#10b981',
+    parentId: null,
+    cover: {
+      type: 'gradient',
+      value: 'linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%)',
+      textColor: 'light',
+    },
+    subViewOverride: 'expanded',
+  },
   { id: 'cat-work-collab', name: '协同项目管理', icon: 'Zap', order: 15, color: '#10b981', parentId: 'cat-work' },
   { id: 'cat-work-whiteboard', name: '白板与思维工具', icon: 'Coffee', order: 16, color: '#10b981', parentId: 'cat-work' },
 ];
@@ -835,3 +910,365 @@ export function archiveInactiveBookmarks(
     archivedCount: inactiveBookmarks.length,
   };
 }
+
+// ==========================================
+// System Settings Persistence
+// ==========================================
+
+export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
+  defaultTheme: 'system',
+  defaultViewMode: 'card',
+  enableDailyPicks: true,
+  defaultSortOption: 'custom',
+  defaultSubCategoriesView: 'expanded',
+  openInNewTab: true,
+  autoArchiveMonths: 6,
+};
+
+export function loadSystemSettings(): SystemSettings {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.SYSTEM_SETTINGS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        ...DEFAULT_SYSTEM_SETTINGS,
+        ...parsed,
+      };
+    }
+  } catch (e) {
+    console.error('Failed to load system settings', e);
+  }
+  return DEFAULT_SYSTEM_SETTINGS;
+}
+
+export function saveSystemSettings(settings: SystemSettings): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_SETTINGS, JSON.stringify(settings));
+  } catch (e) {
+    console.error('Failed to save system settings', e);
+  }
+}
+
+// ==========================================
+// Tag Management Helpers
+// ==========================================
+
+export interface TagStat {
+  name: string;
+  count: number;
+  lastUsedAt?: number;
+}
+
+export function getTagStatistics(bookmarks: Bookmark[]): TagStat[] {
+  const map = new Map<string, { count: number; lastUsedAt?: number }>();
+  for (const b of bookmarks) {
+    if (Array.isArray(b.tags)) {
+      for (const t of b.tags) {
+        const clean = t.trim();
+        if (!clean) continue;
+        const existing = map.get(clean) || { count: 0, lastUsedAt: b.updatedAt || b.createdAt };
+        existing.count += 1;
+        const bookmarkTime = b.updatedAt || b.createdAt;
+        if (bookmarkTime && (!existing.lastUsedAt || bookmarkTime > existing.lastUsedAt)) {
+          existing.lastUsedAt = bookmarkTime;
+        }
+        map.set(clean, existing);
+      }
+    }
+  }
+
+  return Array.from(map.entries())
+    .map(([name, data]) => ({ name, count: data.count, lastUsedAt: data.lastUsedAt }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+export function renameTagInBookmarks(oldTag: string, newTag: string, bookmarks: Bookmark[]): Bookmark[] {
+  const cleanOld = oldTag.trim();
+  const cleanNew = newTag.trim().replace(/^#/, '');
+  if (!cleanOld || !cleanNew) return bookmarks;
+  const now = Date.now();
+  return bookmarks.map((b) => {
+    if (b.tags && b.tags.includes(cleanOld)) {
+      const updatedTags = Array.from(new Set(b.tags.map((t) => (t === cleanOld ? cleanNew : t))));
+      return {
+        ...b,
+        tags: updatedTags,
+        updatedAt: now,
+      };
+    }
+    return b;
+  });
+}
+
+export function deleteTagFromBookmarks(tagToDelete: string, bookmarks: Bookmark[]): Bookmark[] {
+  const clean = tagToDelete.trim();
+  if (!clean) return bookmarks;
+  const now = Date.now();
+  return bookmarks.map((b) => {
+    if (b.tags && b.tags.includes(clean)) {
+      return {
+        ...b,
+        tags: b.tags.filter((t) => t !== clean),
+        updatedAt: now,
+      };
+    }
+    return b;
+  });
+}
+
+export function mergeTagsInBookmarks(sourceTag: string, targetTag: string, bookmarks: Bookmark[]): Bookmark[] {
+  return renameTagInBookmarks(sourceTag, targetTag, bookmarks);
+}
+
+// ==========================================
+// Batch Bookmark Operations
+// ==========================================
+
+export function batchUpdateCategory(
+  bookmarkIds: string[],
+  targetCategoryId: string,
+  bookmarks: Bookmark[]
+): Bookmark[] {
+  const idSet = new Set(bookmarkIds);
+  const now = Date.now();
+  return bookmarks.map((b) => {
+    if (idSet.has(b.id)) {
+      return { ...b, categoryId: targetCategoryId, updatedAt: now };
+    }
+    return b;
+  });
+}
+
+export function batchAddTags(
+  bookmarkIds: string[],
+  tagsToAdd: string[],
+  bookmarks: Bookmark[]
+): Bookmark[] {
+  const idSet = new Set(bookmarkIds);
+  const cleanTags = tagsToAdd.map((t) => t.trim().replace(/^#/, '')).filter(Boolean);
+  if (cleanTags.length === 0) return bookmarks;
+  const now = Date.now();
+  return bookmarks.map((b) => {
+    if (idSet.has(b.id)) {
+      const merged = Array.from(new Set([...(b.tags || []), ...cleanTags]));
+      return { ...b, tags: merged, updatedAt: now };
+    }
+    return b;
+  });
+}
+
+export function batchRemoveTags(
+  bookmarkIds: string[],
+  tagsToRemove: string[],
+  bookmarks: Bookmark[]
+): Bookmark[] {
+  const idSet = new Set(bookmarkIds);
+  const removeSet = new Set(tagsToRemove.map((t) => t.trim().replace(/^#/, '')));
+  if (removeSet.size === 0) return bookmarks;
+  const now = Date.now();
+  return bookmarks.map((b) => {
+    if (idSet.has(b.id)) {
+      const filtered = (b.tags || []).filter((t) => !removeSet.has(t));
+      return { ...b, tags: filtered, updatedAt: now };
+    }
+    return b;
+  });
+}
+
+export function batchUpdateColor(
+  bookmarkIds: string[],
+  color: string | undefined,
+  bookmarks: Bookmark[]
+): Bookmark[] {
+  const idSet = new Set(bookmarkIds);
+  const now = Date.now();
+  return bookmarks.map((b) => {
+    if (idSet.has(b.id)) {
+      return { ...b, color: color || undefined, updatedAt: now };
+    }
+    return b;
+  });
+}
+
+export function batchTogglePin(
+  bookmarkIds: string[],
+  isPinned: boolean,
+  bookmarks: Bookmark[]
+): Bookmark[] {
+  const idSet = new Set(bookmarkIds);
+  const now = Date.now();
+  return bookmarks.map((b) => {
+    if (idSet.has(b.id)) {
+      return { ...b, isPinned, updatedAt: now };
+    }
+    return b;
+  });
+}
+
+export function batchToggleStar(
+  bookmarkIds: string[],
+  isStarred: boolean,
+  bookmarks: Bookmark[]
+): Bookmark[] {
+  const idSet = new Set(bookmarkIds);
+  const now = Date.now();
+  return bookmarks.map((b) => {
+    if (idSet.has(b.id)) {
+      return { ...b, isStarred, updatedAt: now };
+    }
+    return b;
+  });
+}
+
+export function batchDeleteBookmarks(
+  bookmarkIds: string[],
+  bookmarks: Bookmark[]
+): Bookmark[] {
+  const idSet = new Set(bookmarkIds);
+  return bookmarks.filter((b) => !idSet.has(b.id));
+}
+
+// ==========================================
+// Modular Backup & Export Utilities
+// ==========================================
+
+export function exportBookmarksOnlyJson(bookmarks: Bookmark[], categories: Category[]): string {
+  const data: ExportData = {
+    version: '1.0',
+    exportedAt: Date.now(),
+    source: 'BookmarkHub',
+    categories,
+    bookmarks,
+  };
+  return JSON.stringify(data, null, 2);
+}
+
+export function exportSystemConfigJson(categories: Category[], settings: SystemSettings): string {
+  const data: SystemConfigBackup = {
+    version: '1.0',
+    exportedAt: Date.now(),
+    source: 'BookmarkHub',
+    type: 'config',
+    categories,
+    settings,
+  };
+  return JSON.stringify(data, null, 2);
+}
+
+export function exportFullBackupJson(
+  bookmarks: Bookmark[],
+  categories: Category[],
+  settings: SystemSettings
+): string {
+  const data: FullBackupData = {
+    version: '1.0',
+    exportedAt: Date.now(),
+    source: 'BookmarkHub',
+    type: 'full',
+    settings,
+    categories,
+    bookmarks,
+  };
+  return JSON.stringify(data, null, 2);
+}
+
+export function downloadJsonFile(content: string, filename: string): void {
+  const blob = new Blob([content], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export interface BackupValidationResult {
+  isValid: boolean;
+  type: 'bookmarks' | 'config' | 'full' | 'unknown';
+  parsedData: any;
+  error?: string;
+  stats?: {
+    bookmarkCount: number;
+    categoryCount: number;
+    hasSettings: boolean;
+  };
+}
+
+export function validateAndParseBackupFile(rawJson: string): BackupValidationResult {
+  try {
+    const data = JSON.parse(rawJson);
+    if (!data || typeof data !== 'object') {
+      return { isValid: false, type: 'unknown', parsedData: null, error: '文件内容非合法 JSON 对象' };
+    }
+
+    if (data.type === 'full' && Array.isArray(data.bookmarks) && Array.isArray(data.categories)) {
+      return {
+        isValid: true,
+        type: 'full',
+        parsedData: data,
+        stats: {
+          bookmarkCount: data.bookmarks.length,
+          categoryCount: data.categories.length,
+          hasSettings: Boolean(data.settings),
+        },
+      };
+    }
+
+    if (data.type === 'config' && Array.isArray(data.categories)) {
+      return {
+        isValid: true,
+        type: 'config',
+        parsedData: data,
+        stats: {
+          bookmarkCount: 0,
+          categoryCount: data.categories.length,
+          hasSettings: Boolean(data.settings),
+        },
+      };
+    }
+
+    if (Array.isArray(data.bookmarks)) {
+      return {
+        isValid: true,
+        type: 'bookmarks',
+        parsedData: data,
+        stats: {
+          bookmarkCount: data.bookmarks.length,
+          categoryCount: Array.isArray(data.categories) ? data.categories.length : 0,
+          hasSettings: false,
+        },
+      };
+    }
+
+    // Fallback: array of bookmarks
+    if (Array.isArray(data)) {
+      return {
+        isValid: true,
+        type: 'bookmarks',
+        parsedData: { bookmarks: data, categories: [] },
+        stats: {
+          bookmarkCount: data.length,
+          categoryCount: 0,
+          hasSettings: false,
+        },
+      };
+    }
+
+    return {
+      isValid: false,
+      type: 'unknown',
+      parsedData: null,
+      error: '无法识别此备份文件格式，请确保是由 BookmarkHub 导出的备份',
+    };
+  } catch (err: any) {
+    return {
+      isValid: false,
+      type: 'unknown',
+      parsedData: null,
+      error: err?.message || 'JSON 解析失败',
+    };
+  }
+}
+

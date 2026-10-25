@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { Category, Bookmark } from '../types';
 import { CategoryIcon } from './CategoryIcon';
 import { buildCategoryTree, CategoryTreeItem } from '../utils/storage';
+import { getCoverStyle } from '../utils/coverPresets';
 import {
   Bookmark as BookmarkIcon,
   Star,
@@ -14,6 +15,7 @@ import {
   ChevronDown,
   ChevronRight,
   Archive,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -30,6 +32,7 @@ interface SidebarProps {
   allTags: string[];
   onOpenCategoryModal: () => void;
   onOpenArchiveModal?: () => void;
+  onOpenAdmin?: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
   isDraggingBookmark?: boolean;
@@ -61,6 +64,7 @@ const DroppableCategoryButton: React.FC<DroppableCategoryButtonProps> = ({
   isExpanded = true,
   onToggleExpand,
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
   const { setNodeRef, isOver } = useDroppable({
     id: droppableId,
     data: {
@@ -71,7 +75,12 @@ const DroppableCategoryButton: React.FC<DroppableCategoryButtonProps> = ({
   });
 
   return (
-    <div ref={setNodeRef} className="relative">
+    <div
+      ref={setNodeRef}
+      className="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <button
         type="button"
         onClick={onSelect}
@@ -139,6 +148,40 @@ const DroppableCategoryButton: React.FC<DroppableCategoryButtonProps> = ({
           )}
         </div>
       </button>
+
+      {/* Floating Category Cover Preview Card on Hover */}
+      {isHovered && category.cover?.value && !isSubcategory && !isDraggingBookmark && (
+        <div
+          className="hidden md:block absolute left-full top-0 ml-2.5 z-50 w-64 rounded-xl overflow-hidden shadow-2xl border border-neutral-200 dark:border-neutral-700 animate-in fade-in zoom-in-95 pointer-events-none"
+          style={getCoverStyle(category.cover)}
+        >
+          <div className="p-3 bg-black/40 backdrop-blur-[2px] text-white space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md bg-white/20 backdrop-blur-xs flex items-center justify-center text-white shrink-0">
+                <CategoryIcon name={category.icon} className="w-3.5 h-3.5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="font-bold text-xs tracking-wide block truncate text-white drop-shadow-xs">
+                  {category.name}
+                </span>
+                <span className="text-[10px] text-white/80">{count} 个网址</span>
+              </div>
+            </div>
+            {category.description && (
+              <p className="text-[10px] text-white/90 line-clamp-2 leading-tight">
+                {category.description}
+              </p>
+            )}
+            <div className="text-[9px] text-white/60 tracking-wider">
+              {category.cover.type === 'gradient'
+                ? '渐变色 Cover'
+                : category.cover.type === 'solid'
+                ? '纯色 Cover'
+                : '高清图片 Cover'}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -157,6 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   allTags,
   onOpenCategoryModal,
   onOpenArchiveModal,
+  onOpenAdmin,
   isOpenMobile,
   onCloseMobile,
   isDraggingBookmark = false,
@@ -420,15 +464,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Footer link to manage categories */}
-      <div className="p-3 border-t border-neutral-200 dark:border-neutral-800">
+      {/* Footer links to admin and category management */}
+      <div className="p-3 border-t border-neutral-200 dark:border-neutral-800 space-y-1.5">
+        {onOpenAdmin && (
+          <button
+            type="button"
+            onClick={onOpenAdmin}
+            className="w-full py-2 px-3 rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-semibold transition-all hover:bg-neutral-800 dark:hover:bg-neutral-200 flex items-center justify-center gap-1.5 shadow-2xs"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>系统管理中心</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={onOpenCategoryModal}
-          className="w-full py-2 px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
+          className="w-full py-1.5 px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
         >
           <FolderPlus className="w-3.5 h-3.5" />
-          <span>管理分类与二级结构</span>
+          <span>快速调整分类</span>
         </button>
       </div>
     </div>
