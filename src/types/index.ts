@@ -22,6 +22,7 @@ export interface Category {
   order: number;
   description?: string;
   color?: string;
+  parentId?: string | null; // null or undefined indicates top-level (level 1), string indicates level 2 subcategory
 }
 
 export type ViewMode = 'card' | 'list' | 'group';

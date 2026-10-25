@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Bookmark, Category } from '../types';
 import { fetchWebpageTitle } from '../utils/url';
+import { buildCategoryTree } from '../utils/storage';
 import { X, Loader2, Sparkles, Pin, Star, Plus } from 'lucide-react';
 import { useToast } from './Toast';
 
@@ -23,6 +24,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
   availableTags,
   initialCategoryId,
 }) => {
+  const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -207,10 +209,15 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
               onChange={(e) => setCategoryId(e.target.value)}
               className="w-full px-3 py-2 text-sm rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100"
             >
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
+              {categoryTree.map((root) => (
+                <optgroup key={root.id} label={root.name}>
+                  <option value={root.id}>{root.name} (一级目录)</option>
+                  {root.children.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      &nbsp;&nbsp;↳ {sub.name}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>

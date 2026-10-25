@@ -17,6 +17,7 @@ import {
   Briefcase,
   Coffee,
   BookmarkCheck,
+  Archive,
   LucideProps,
 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ export const AVAILABLE_ICONS = [
   { name: 'Shield', label: '安全/隐私', icon: Shield },
   { name: 'Briefcase', label: '商务/办公', icon: Briefcase },
   { name: 'Coffee', label: '生活/休闲', icon: Coffee },
+  { name: 'Archive', label: '归档/封存', icon: Archive },
   { name: 'Folder', label: '通用文件夹', icon: Folder },
 ];
 
@@ -54,6 +56,7 @@ const iconMap: Record<string, React.FC<LucideProps>> = {
   Briefcase,
   Coffee,
   BookmarkCheck,
+  Archive,
 };
 
 interface CategoryIconProps extends LucideProps {

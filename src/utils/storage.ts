@@ -2,17 +2,37 @@ import { Bookmark, Category, ExportData, ImportDiff, ImportMode } from '../types
 
 const STORAGE_KEYS = {
   BOOKMARKS: 'bookmarkhub_bookmarks_v1',
-  CATEGORIES: 'bookmarkhub_categories_v1',
+  CATEGORIES: 'bookmarkhub_categories_v2',
   VIEW_MODE: 'bookmarkhub_view_mode',
   THEME_MODE: 'bookmarkhub_theme_mode',
 };
 
 export const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'cat-ai', name: '人工智能', icon: 'Sparkles', order: 1, color: '#6366f1' },
-  { id: 'cat-dev', name: '开发工具', icon: 'Code', order: 2, color: '#0ea5e9' },
-  { id: 'cat-design', name: '设计资源', icon: 'Palette', order: 3, color: '#ec4899' },
-  { id: 'cat-read', name: '资讯阅读', icon: 'BookOpen', order: 4, color: '#f59e0b' },
-  { id: 'cat-work', name: '高效办公', icon: 'Zap', order: 5, color: '#10b981' },
+  // 1. 人工智能
+  { id: 'cat-ai', name: '人工智能', icon: 'Sparkles', order: 1, color: '#6366f1', parentId: null },
+  { id: 'cat-ai-chat', name: '大模型与交互', icon: 'Sparkles', order: 2, color: '#6366f1', parentId: 'cat-ai' },
+  { id: 'cat-ai-models', name: '开源模型社区', icon: 'Cpu', order: 3, color: '#6366f1', parentId: 'cat-ai' },
+
+  // 2. 开发工具
+  { id: 'cat-dev', name: '开发工具', icon: 'Code', order: 4, color: '#0ea5e9', parentId: null },
+  { id: 'cat-dev-repo', name: '代码托管协作', icon: 'Code', order: 5, color: '#0ea5e9', parentId: 'cat-dev' },
+  { id: 'cat-dev-frontend', name: '前端与框架', icon: 'Layers', order: 6, color: '#0ea5e9', parentId: 'cat-dev' },
+  { id: 'cat-dev-docs', name: '技术离线文档', icon: 'Terminal', order: 7, color: '#0ea5e9', parentId: 'cat-dev' },
+
+  // 3. 设计资源
+  { id: 'cat-design', name: '设计资源', icon: 'Palette', order: 8, color: '#ec4899', parentId: null },
+  { id: 'cat-design-ui', name: '界面与原型协同', icon: 'Palette', order: 9, color: '#ec4899', parentId: 'cat-design' },
+  { id: 'cat-design-inspire', name: '创意灵感社区', icon: 'Compass', order: 10, color: '#ec4899', parentId: 'cat-design' },
+
+  // 4. 资讯阅读
+  { id: 'cat-read', name: '资讯阅读', icon: 'BookOpen', order: 11, color: '#f59e0b', parentId: null },
+  { id: 'cat-read-tech', name: '开发者技术社区', icon: 'Globe', order: 12, color: '#f59e0b', parentId: 'cat-read' },
+  { id: 'cat-read-news', name: '极客与数字生活', icon: 'BookOpen', order: 13, color: '#f59e0b', parentId: 'cat-read' },
+
+  // 5. 高效办公
+  { id: 'cat-work', name: '高效办公', icon: 'Zap', order: 14, color: '#10b981', parentId: null },
+  { id: 'cat-work-collab', name: '协同项目管理', icon: 'Zap', order: 15, color: '#10b981', parentId: 'cat-work' },
+  { id: 'cat-work-whiteboard', name: '白板与思维工具', icon: 'Coffee', order: 16, color: '#10b981', parentId: 'cat-work' },
 ];
 
 const now = Date.now();
@@ -24,7 +44,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-1',
     title: 'Google AI Studio',
     url: 'https://aistudio.google.com',
-    categoryId: 'cat-ai',
+    categoryId: 'cat-ai-chat',
     tags: ['AI', 'Gemini', 'API', '开发'],
     notes: 'Google 最新模型体验与原型开发平台，支持 Gemini 2.5/3.0 系列 API',
     isPinned: true,
@@ -39,7 +59,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-2',
     title: 'GitHub',
     url: 'https://github.com',
-    categoryId: 'cat-dev',
+    categoryId: 'cat-dev-repo',
     tags: ['代码托管', '开源', 'Git'],
     notes: '全球领先的软件开发与开源协作社区',
     isPinned: true,
@@ -54,7 +74,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-3',
     title: 'Hugging Face',
     url: 'https://huggingface.co',
-    categoryId: 'cat-ai',
+    categoryId: 'cat-ai-models',
     tags: ['AI', '模型', '开源', '机器学习'],
     notes: '开源机器学习平台与模型社区',
     isPinned: false,
@@ -69,7 +89,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-4',
     title: 'Tailwind CSS',
     url: 'https://tailwindcss.com',
-    categoryId: 'cat-dev',
+    categoryId: 'cat-dev-frontend',
     tags: ['CSS', '前端', '样式库'],
     notes: '高度可定制、效能优先的现代 CSS 框架',
     isPinned: false,
@@ -84,7 +104,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-5',
     title: 'Figma',
     url: 'https://www.figma.com',
-    categoryId: 'cat-design',
+    categoryId: 'cat-design-ui',
     tags: ['UI设计', '协作', '原型'],
     notes: '基于浏览器的现代协同界面设计工具',
     isPinned: true,
@@ -99,7 +119,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-6',
     title: 'Dribbble',
     url: 'https://dribbble.com',
-    categoryId: 'cat-design',
+    categoryId: 'cat-design-inspire',
     tags: ['灵感', '设计', '插画'],
     notes: '全球顶尖设计师与创意工作者的作品展示社区',
     isPinned: false,
@@ -114,7 +134,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-7',
     title: 'V2EX',
     url: 'https://v2ex.com',
-    categoryId: 'cat-read',
+    categoryId: 'cat-read-tech',
     tags: ['社区', '技术', '讨论'],
     notes: '创意工作者讨论技术、数码与生活的社区',
     isPinned: false,
@@ -129,7 +149,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-8',
     title: 'Hacker News',
     url: 'https://news.ycombinator.com',
-    categoryId: 'cat-read',
+    categoryId: 'cat-read-news',
     tags: ['资讯', '极客', '硅谷', '创业'],
     notes: 'Y Combinator 旗下的高质量科技热点讨论榜单',
     isPinned: false,
@@ -144,7 +164,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-9',
     title: '少数派 sspai',
     url: 'https://sspai.com',
-    categoryId: 'cat-read',
+    categoryId: 'cat-read-news',
     tags: ['效率', '数码', '测评', '生活'],
     notes: '高质量数字生活指南与效率工具探讨平台',
     isPinned: false,
@@ -159,7 +179,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-10',
     title: 'Notion',
     url: 'https://notion.so',
-    categoryId: 'cat-work',
+    categoryId: 'cat-work-collab',
     tags: ['笔记', '知识库', '项目管理'],
     notes: '一体化工作空间，融合笔记、任务看板与数据库',
     isPinned: true,
@@ -174,7 +194,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-11',
     title: 'Linear',
     url: 'https://linear.app',
-    categoryId: 'cat-work',
+    categoryId: 'cat-work-collab',
     tags: ['项目管理', 'Issue', '敏捷'],
     notes: '专为高性能技术团队打造的极速项目跟踪系统',
     isPinned: false,
@@ -189,7 +209,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-12',
     title: 'DevDocs',
     url: 'https://devdocs.io',
-    categoryId: 'cat-dev',
+    categoryId: 'cat-dev-docs',
     tags: ['文档', '查阅', '前端', '后端'],
     notes: '集合所有主流编程语言和框架的快速离线文档库',
     isPinned: false,
@@ -204,7 +224,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-13',
     title: 'Excalidraw',
     url: 'https://excalidraw.com',
-    categoryId: 'cat-work',
+    categoryId: 'cat-work-whiteboard',
     tags: ['白板', '手绘', '架构图', '工具'],
     notes: '虚拟手绘风格白板，极简轻便且支持多人实时协同',
     isPinned: false,
@@ -219,7 +239,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     id: 'bm-14',
     title: 'Iconify',
     url: 'https://iconify.design',
-    categoryId: 'cat-design',
+    categoryId: 'cat-design-ui',
     tags: ['图标', 'SVG', '资源'],
     notes: '统一图标框架，收录超过 200,000 个开源矢量图标',
     isPinned: false,
@@ -230,19 +250,184 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     updatedAt: now - 10 * day,
     order: 14,
   },
+  {
+    id: 'bm-15',
+    title: 'MDN Web Docs',
+    url: 'https://developer.mozilla.org',
+    categoryId: 'cat-dev-docs',
+    tags: ['Web', 'JavaScript', 'HTML', '学习'],
+    notes: '面向 Web 开发者的权威开放技术文档，包含 HTML5、CSS 与现代 JS 参考',
+    isPinned: false,
+    isStarred: true,
+    clickCount: 0,
+    lastClickedAt: null,
+    createdAt: now - 15 * day,
+    updatedAt: now - 15 * day,
+    order: 15,
+  },
+  {
+    id: 'bm-16',
+    title: 'Can I use',
+    url: 'https://caniuse.com',
+    categoryId: 'cat-dev-frontend',
+    tags: ['前端', '浏览器兼容性', 'HTML5', 'CSS3'],
+    notes: '现代浏览器对前端技术标准支持度速查表，开发必备',
+    isPinned: false,
+    isStarred: false,
+    clickCount: 0,
+    lastClickedAt: null,
+    createdAt: now - 8 * day,
+    updatedAt: now - 8 * day,
+    order: 16,
+  },
+  {
+    id: 'bm-17',
+    title: 'CSS Tricks (经典技术归档)',
+    url: 'https://css-tricks.com',
+    categoryId: 'cat-dev-frontend',
+    tags: ['CSS', '前端', '技巧'],
+    notes: '早期经典前端 CSS 教程，超过 6 个月（200 天）未曾翻阅',
+    isPinned: false,
+    isStarred: false,
+    clickCount: 2,
+    lastClickedAt: now - 200 * day,
+    createdAt: now - 220 * day,
+    updatedAt: now - 200 * day,
+    order: 17,
+  },
+  {
+    id: 'bm-18',
+    title: 'Sublime Text 官网',
+    url: 'https://www.sublimetext.com',
+    categoryId: 'cat-dev-repo',
+    tags: ['编辑器', '轻量', '代码'],
+    notes: '历史收藏的极速代码文本编辑器，长达 230 天未曾点击',
+    isPinned: false,
+    isStarred: false,
+    clickCount: 0,
+    lastClickedAt: null,
+    createdAt: now - 230 * day,
+    updatedAt: now - 230 * day,
+    order: 18,
+  },
 ];
+
+export interface CategoryTreeItem extends Category {
+  children: Category[];
+}
+
+/**
+ * Build 2-level category hierarchy:
+ * Root categories (parentId === null or undefined), with their nested subcategories
+ */
+export function buildCategoryTree(categories: Category[]): CategoryTreeItem[] {
+  const rootCategories: CategoryTreeItem[] = [];
+  const childrenMap = new Map<string, Category[]>();
+
+  // Sort by order first
+  const sorted = [...categories].sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  for (const cat of sorted) {
+    if (cat.parentId) {
+      if (!childrenMap.has(cat.parentId)) {
+        childrenMap.set(cat.parentId, []);
+      }
+      childrenMap.get(cat.parentId)!.push(cat);
+    } else {
+      rootCategories.push({
+        ...cat,
+        children: [],
+      });
+    }
+  }
+
+  // Attach children
+  for (const root of rootCategories) {
+    root.children = childrenMap.get(root.id) || [];
+  }
+
+  // Handle any orphaned categories whose parentId doesn't exist
+  const rootIds = new Set(rootCategories.map((r) => r.id));
+  for (const [parentId, orphans] of childrenMap.entries()) {
+    if (!rootIds.has(parentId)) {
+      for (const orphan of orphans) {
+        rootCategories.push({
+          ...orphan,
+          parentId: null,
+          children: [],
+        });
+      }
+    }
+  }
+
+  return rootCategories;
+}
+
+/**
+ * Get all category IDs including target and its subcategory children
+ */
+export function getCategoryWithChildrenIds(categoryId: string, categories: Category[]): string[] {
+  const ids = [categoryId];
+  for (const cat of categories) {
+    if (cat.parentId === categoryId) {
+      ids.push(cat.id);
+    }
+  }
+  return ids;
+}
+
+/**
+ * Get category breadcrumb path: parent -> current, or just current
+ */
+export function getCategoryBreadcrumb(
+  categoryId: string | null,
+  categories: Category[]
+): { parent?: Category; current?: Category } {
+  if (!categoryId) return {};
+  const current = categories.find((c) => c.id === categoryId);
+  if (!current) return {};
+
+  if (current.parentId) {
+    const parent = categories.find((c) => c.id === current.parentId);
+    return { parent, current };
+  }
+
+  return { current };
+}
 
 export function loadCategories(): Category[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-    if (!raw) {
-      saveCategories(DEFAULT_CATEGORIES);
-      return DEFAULT_CATEGORIES;
+    // Try V2 first, fallback to V1 with migration
+    const rawV2 = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+    if (rawV2) {
+      const parsed = JSON.parse(rawV2);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((c) => ({
+          ...c,
+          parentId: c.parentId || null,
+        }));
+      }
     }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+
+    const rawV1 = localStorage.getItem('bookmarkhub_categories_v1');
+    if (rawV1) {
+      const parsed = JSON.parse(rawV1);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Upgrade with 2-level defaults if user had the 5 basic ones
+        if (parsed.length === 5 && !parsed.some((c) => c.parentId)) {
+          saveCategories(DEFAULT_CATEGORIES);
+          return DEFAULT_CATEGORIES;
+        }
+        const upgraded = parsed.map((c) => ({
+          ...c,
+          parentId: c.parentId || null,
+        }));
+        saveCategories(upgraded);
+        return upgraded;
+      }
     }
+
+    saveCategories(DEFAULT_CATEGORIES);
     return DEFAULT_CATEGORIES;
   } catch (e) {
     console.error('Failed to load categories from localStorage:', e);
@@ -286,7 +471,7 @@ export function saveBookmarks(bookmarks: Bookmark[]): void {
 
 export function exportDataAsJSON(bookmarks: Bookmark[], categories: Category[]): void {
   const exportPayload: ExportData = {
-    version: '1.0',
+    version: '2.0',
     exportedAt: Date.now(),
     source: '轻藏 BookmarkHub',
     categories,
@@ -430,7 +615,10 @@ export function executeImport(
   // Merge categories if incoming has new categories
   let updatedCategories = [...currentCategories];
   if (mode === 'overwrite' && diff.incomingCategories.length > 0) {
-    updatedCategories = diff.incomingCategories;
+    updatedCategories = diff.incomingCategories.map((c) => ({
+      ...c,
+      parentId: c.parentId || null,
+    }));
   } else if (diff.incomingCategories.length > 0) {
     const existingCatNames = new Set(currentCategories.map((c) => c.name.toLowerCase()));
     const existingCatIds = new Set(currentCategories.map((c) => c.id));
@@ -439,6 +627,7 @@ export function executeImport(
         updatedCategories.push({
           ...inCat,
           id: inCat.id || `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          parentId: inCat.parentId || null,
         });
       }
     }
@@ -532,5 +721,110 @@ export function executeImport(
     categories: updatedCategories,
     addedCount: sanitizedNew.length,
     updatedCount,
+  };
+}
+
+// ==========================================
+// 6-Month Inactive Bookmarks Archiving Helpers
+// ==========================================
+
+export const ARCHIVED_CATEGORY_ID = 'cat-archived';
+
+export const ARCHIVED_CATEGORY: Category = {
+  id: ARCHIVED_CATEGORY_ID,
+  name: '已归档',
+  icon: 'Archive',
+  order: 999,
+  color: '#71717a',
+  parentId: null,
+  description: '超过 6 个月未访问的归档书签',
+};
+
+// 6 months in milliseconds (180 days)
+export const SIX_MONTHS_MS = 180 * 24 * 60 * 60 * 1000;
+
+/**
+ * Check if a bookmark has had no clicks in the last 6 months
+ */
+export function isBookmarkInactiveSixMonths(
+  bookmark: Bookmark,
+  nowTimestamp: number = Date.now()
+): boolean {
+  // If already in archived category, skip
+  if (bookmark.categoryId === ARCHIVED_CATEGORY_ID) {
+    return false;
+  }
+  // If clicked before, check lastClickedAt
+  if (bookmark.lastClickedAt) {
+    return nowTimestamp - bookmark.lastClickedAt >= SIX_MONTHS_MS;
+  }
+  // If never clicked, check if created at least 6 months ago
+  return nowTimestamp - (bookmark.createdAt || 0) >= SIX_MONTHS_MS;
+}
+
+/**
+ * Get all bookmarks that have had no clicks in the last 6 months
+ */
+export function getInactiveBookmarks(
+  bookmarks: Bookmark[],
+  nowTimestamp: number = Date.now()
+): Bookmark[] {
+  return bookmarks.filter((b) => isBookmarkInactiveSixMonths(b, nowTimestamp));
+}
+
+/**
+ * Automatically move bookmarks with no clicks in the last 6 months into the 'Archived' category
+ */
+export function archiveInactiveBookmarks(
+  bookmarks: Bookmark[],
+  categories: Category[],
+  nowTimestamp: number = Date.now()
+): {
+  updatedBookmarks: Bookmark[];
+  updatedCategories: Category[];
+  archivedBookmarks: Bookmark[];
+  archivedCount: number;
+} {
+  const inactiveBookmarks = getInactiveBookmarks(bookmarks, nowTimestamp);
+  if (inactiveBookmarks.length === 0) {
+    return {
+      updatedBookmarks: bookmarks,
+      updatedCategories: categories,
+      archivedBookmarks: [],
+      archivedCount: 0,
+    };
+  }
+
+  // Ensure '已归档' category exists in categories
+  let updatedCategories = [...categories];
+  const existingArchivedCat = updatedCategories.find(
+    (c) => c.id === ARCHIVED_CATEGORY_ID || c.name === '已归档'
+  );
+  let targetCatId = ARCHIVED_CATEGORY_ID;
+
+  if (!existingArchivedCat) {
+    updatedCategories.push(ARCHIVED_CATEGORY);
+  } else {
+    targetCatId = existingArchivedCat.id;
+  }
+
+  const inactiveIdSet = new Set(inactiveBookmarks.map((b) => b.id));
+
+  const updatedBookmarks = bookmarks.map((b) => {
+    if (inactiveIdSet.has(b.id)) {
+      return {
+        ...b,
+        categoryId: targetCatId,
+        updatedAt: nowTimestamp,
+      };
+    }
+    return b;
+  });
+
+  return {
+    updatedBookmarks,
+    updatedCategories,
+    archivedBookmarks: inactiveBookmarks,
+    archivedCount: inactiveBookmarks.length,
   };
 }

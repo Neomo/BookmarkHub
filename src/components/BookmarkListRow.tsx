@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bookmark, Category } from '../types';
 import { extractDomain, getFaviconUrl, formatRelativeTime } from '../utils/url';
-import { Pin, Star, Globe, Copy, Edit2, Trash2, ExternalLink } from 'lucide-react';
+import { Pin, Star, Globe, Copy, Edit2, Trash2, ExternalLink, QrCode } from 'lucide-react';
 import { useToast } from './Toast';
 
 interface BookmarkListRowProps {
@@ -13,6 +13,7 @@ interface BookmarkListRowProps {
   onToggleStar: (id: string) => void;
   onRecordClick: (bookmark: Bookmark) => void;
   onSelectTag?: (tag: string) => void;
+  onShowQrCode?: (bookmark: Bookmark) => void;
 }
 
 export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
@@ -24,6 +25,7 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
   onToggleStar,
   onRecordClick,
   onSelectTag,
+  onShowQrCode,
 }) => {
   const [faviconError, setFaviconError] = useState(false);
   const { showToast } = useToast();
@@ -125,6 +127,18 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
         </div>
 
         <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onShowQrCode?.(bookmark);
+            }}
+            title="生成手机扫码二维码"
+            className="p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+          </button>
+
           <button
             type="button"
             onClick={(e) => {

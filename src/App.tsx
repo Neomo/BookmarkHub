@@ -1,36 +1,63 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  CollisionDetection,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
 import { Bookmark, Category, ViewMode, SortOption } from './types';
 import {
   loadBookmarks,
   saveBookmarks,
   loadCategories,
   saveCategories,
+  getCategoryWithChildrenIds,
+  getCategoryBreadcrumb,
+  getInactiveBookmarks,
+  archiveInactiveBookmarks,
+  ARCHIVED_CATEGORY_ID,
+  ARCHIVED_CATEGORY,
 } from './utils/storage';
 import { matchBookmark } from './utils/pinyin';
+import { extractDomain, getFaviconUrl } from './utils/url';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
-import { BookmarkCard } from './components/BookmarkCard';
+import { SortableBookmarkCard } from './components/SortableBookmarkCard';
 import { BookmarkListRow } from './components/BookmarkListRow';
 import { BookmarkGroupView } from './components/BookmarkGroupView';
+import { DailyPicksBanner } from './components/DailyPicksBanner';
+import { ArchiveModal } from './components/ArchiveModal';
 import { AddEditModal } from './components/AddEditModal';
 import { BatchAddModal } from './components/BatchAddModal';
 import { CategoryModal } from './components/CategoryModal';
 import { StatsModal } from './components/StatsModal';
 import { ImportExportModal } from './components/ImportExportModal';
 import { CommandPalette } from './components/CommandPalette';
+import { QrCodeModal } from './components/QrCodeModal';
 import { MobileNav } from './components/MobileNav';
 import { ToastProvider, useToast } from './components/Toast';
 import {
   Search,
-  Filter,
   ArrowUpDown,
-  Plus,
-  Star,
-  Pin,
   X,
   ListPlus,
-  Sparkles,
   Inbox,
+  GripVertical,
+  Globe,
 } from 'lucide-react';
 
 function BookmarkHubApp() {
@@ -56,6 +83,20 @@ function BookmarkHubApp() {
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
+  const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+  const [autoArchiveEnabled, setAutoArchiveEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bookmarkhub_auto_archive_enabled') !== 'false';
+    }
+    return true;
+  });
+
+  // QR Code Modal State
+  const [qrBookmark, setQrBookmark] = useState<Bookmark | null>(null);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+  // Active dragged item for DragOverlay & cross-component category drop
+  const [activeDragBookmark, setActiveDragBookmark] = useState<Bookmark | null>(null);
 
   // Dark mode
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -69,12 +110,61 @@ function BookmarkHubApp() {
 
   const { showToast } = useToast();
 
-  // Load from local storage on mount
+  // Sensors for dnd-kit
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Custom collision detection:
+  // Prioritize pointer collisions so dropping onto sidebar categories (both 1st and 2nd level)
+  // or horizontal subcategory tabs always triggers accurately.
+  // Fall back to closestCenter for smooth card sorting in grid.
+  const customCollisionDetection: CollisionDetection = (args) => {
+    const pointerCollisions = pointerWithin(args);
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions;
+    }
+    const rectCollisions = rectIntersection(args);
+    if (rectCollisions.length > 0) {
+      return rectCollisions;
+    }
+    return closestCenter(args);
+  };
+
+  // Load from local storage on mount & check auto-archive for bookmarks with no clicks in last 6 months
   useEffect(() => {
     const loadedCats = loadCategories();
     const loadedBms = loadBookmarks();
-    setCategories(loadedCats);
-    setBookmarks(loadedBms);
+
+    const autoArchive = localStorage.getItem('bookmarkhub_auto_archive_enabled') !== 'false';
+    if (autoArchive) {
+      const archiveResult = archiveInactiveBookmarks(loadedBms, loadedCats);
+      if (archiveResult.archivedCount > 0) {
+        setCategories(archiveResult.updatedCategories);
+        setBookmarks(archiveResult.updatedBookmarks);
+        saveCategories(archiveResult.updatedCategories);
+        saveBookmarks(archiveResult.updatedBookmarks);
+        setTimeout(() => {
+          showToast(
+            `智能整理：已自动将 ${archiveResult.archivedCount} 个超 6 个月未访问的书签移入「已归档」分类`,
+            'info'
+          );
+        }, 600);
+      } else {
+        setCategories(loadedCats);
+        setBookmarks(loadedBms);
+      }
+    } else {
+      setCategories(loadedCats);
+      setBookmarks(loadedBms);
+    }
 
     const savedView = localStorage.getItem('bookmarkhub_view_mode') as ViewMode | null;
     if (savedView && ['card', 'list', 'group'].includes(savedView)) {
@@ -134,6 +224,12 @@ function BookmarkHubApp() {
     localStorage.setItem('bookmarkhub_view_mode', mode);
   };
 
+  // Open QR code modal
+  const handleShowQrCode = (bookmark: Bookmark) => {
+    setQrBookmark(bookmark);
+    setIsQrModalOpen(true);
+  };
+
   // Collect all distinct tags
   const allTags = useMemo(() => {
     const set = new Set<string>();
@@ -153,6 +249,19 @@ function BookmarkHubApp() {
     }
     return map;
   }, [categories]);
+
+  // Helper to format 2-level category name for cards and list rows
+  const getDisplayCategory = (catId: string): Category | undefined => {
+    const cat = categoryMap.get(catId);
+    if (!cat) return undefined;
+    if (cat.parentId) {
+      const parent = categoryMap.get(cat.parentId);
+      if (parent) {
+        return { ...cat, name: `${parent.name} / ${cat.name}` };
+      }
+    }
+    return cat;
+  };
 
   // Handle click on bookmark: increment clickCount & update lastClickedAt
   const handleRecordClick = (bookmark: Bookmark) => {
@@ -253,13 +362,75 @@ function BookmarkHubApp() {
     updateBookmarks([...newItems, ...bookmarks]);
   };
 
+  // Inactive bookmarks with no clicks in last 6 months (excluding already archived)
+  const inactiveBookmarks = useMemo(() => {
+    return getInactiveBookmarks(bookmarks);
+  }, [bookmarks]);
+  const inactiveCount = inactiveBookmarks.length;
+
+  // Move selected bookmarks to '已归档' (Archived)
+  const handleArchiveBookmarks = (bookmarkIds: string[]) => {
+    let updatedCats = [...categories];
+    const existingArchivedCat = updatedCats.find(
+      (c) => c.id === ARCHIVED_CATEGORY_ID || c.name === '已归档'
+    );
+    let targetCatId = ARCHIVED_CATEGORY_ID;
+
+    if (!existingArchivedCat) {
+      updatedCats.push(ARCHIVED_CATEGORY);
+    } else {
+      targetCatId = existingArchivedCat.id;
+    }
+
+    const idSet = new Set(bookmarkIds);
+    const updatedBms = bookmarks.map((b) =>
+      idSet.has(b.id)
+        ? {
+            ...b,
+            categoryId: targetCatId,
+            updatedAt: Date.now(),
+          }
+        : b
+    );
+
+    updateCategories(updatedCats, updatedBms);
+    showToast(`已成功将 ${bookmarkIds.length} 个闲置网址移入「已归档」分类`, 'success');
+  };
+
+  // Restore selected bookmarks from '已归档' back to a standard category
+  const handleRestoreBookmarks = (bookmarkIds: string[], targetCategoryId: string) => {
+    const idSet = new Set(bookmarkIds);
+    const targetCat = categories.find((c) => c.id === targetCategoryId) || categories[0];
+    const updatedBms = bookmarks.map((b) =>
+      idSet.has(b.id)
+        ? {
+            ...b,
+            categoryId: targetCategoryId,
+            updatedAt: Date.now(),
+          }
+        : b
+    );
+    updateBookmarks(updatedBms);
+    showToast(`已成功恢复 ${bookmarkIds.length} 个网址至「${targetCat?.name || '常规'}」分类`, 'success');
+  };
+
+  // Toggle auto-archive on startup
+  const handleToggleAutoArchive = (enabled: boolean) => {
+    setAutoArchiveEnabled(enabled);
+    localStorage.setItem('bookmarkhub_auto_archive_enabled', enabled ? 'true' : 'false');
+    showToast(enabled ? '已开启启动时自动归档超 6 个月未访问书签' : '已关闭自动归档', 'info');
+  };
+
   // Filtered & Sorted Bookmarks
   const filteredAndSortedBookmarks = useMemo(() => {
     // 1. Filtering
     let list = bookmarks.filter((b) => {
-      // Category filter
-      if (activeCategoryId && b.categoryId !== activeCategoryId) {
-        return false;
+      // Category filter (includes parent category bookmarks and subcategory bookmarks)
+      if (activeCategoryId) {
+        const allowedCatIds = getCategoryWithChildrenIds(activeCategoryId, categories);
+        if (!allowedCatIds.includes(b.categoryId)) {
+          return false;
+        }
       }
       // Starred filter
       if (showOnlyStarred && !b.isStarred) {
@@ -292,7 +463,6 @@ function BookmarkHubApp() {
     });
 
     // 2. Sorting
-    // Rule: Pinned bookmarks always sort to the top unless specifically sorting otherwise
     list.sort((a, b) => {
       // Pinned priority (top)
       if (a.isPinned !== b.isPinned) {
@@ -326,9 +496,87 @@ function BookmarkHubApp() {
     categoryMap,
   ]);
 
-  // Active Category Name display
-  const currentCategoryName = activeCategoryId
-    ? categoryMap.get(activeCategoryId)?.name || '分类'
+  // Handle Drag Start to show overlay and highlight sidebar dropzones
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeId = String(event.active.id);
+    const found = bookmarks.find((b) => b.id === activeId);
+    if (found) {
+      setActiveDragBookmark(found);
+    }
+  };
+
+  // Handle Drag End event (both Card Reordering and Category Drop)
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveDragBookmark(null);
+
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // 1. Check if dropped onto a category in the sidebar!
+    const categoryDropMatch = overId.match(/^droppable-category-(?:mobile-)?(.+)$/);
+    if (categoryDropMatch) {
+      const targetCategoryId = categoryDropMatch[1];
+      const targetCategory = categories.find((c) => c.id === targetCategoryId);
+      const draggedBookmark = bookmarks.find((b) => b.id === activeId);
+
+      if (draggedBookmark && targetCategory) {
+        if (draggedBookmark.categoryId === targetCategoryId) {
+          showToast(`书签「${draggedBookmark.title}」已在「${targetCategory.name}」分类中`, 'info');
+          return;
+        }
+
+        const { parent: targetParent } = getCategoryBreadcrumb(targetCategoryId, categories);
+        const catDisplayName = targetParent
+          ? `${targetParent.name} / ${targetCategory.name}`
+          : targetCategory.name;
+
+        const updated = bookmarks.map((b) =>
+          b.id === draggedBookmark.id
+            ? { ...b, categoryId: targetCategoryId, updatedAt: Date.now() }
+            : b
+        );
+        updateBookmarks(updated);
+        showToast(
+          `已将「${draggedBookmark.title}」分类归入「${catDisplayName}」`,
+          'success'
+        );
+        return;
+      }
+    }
+
+    // 2. Otherwise handle normal card reordering within Card View
+    if (active.id === over.id) return;
+
+    const oldIndex = bookmarks.findIndex((b) => b.id === activeId);
+    const newIndex = bookmarks.findIndex((b) => b.id === overId);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const moved = arrayMove(bookmarks, oldIndex, newIndex);
+      const reordered = moved.map((item, idx) => ({
+        ...item,
+        order: idx + 1,
+      }));
+      updateBookmarks(reordered);
+      if (sortOption !== 'custom') {
+        setSortOption('custom');
+      }
+      showToast('已调整卡片拖拽排序', 'info');
+    }
+  };
+
+  // Active Category Name display with 2-level breadcrumb
+  const { parent: currentParent, current: currentCat } = getCategoryBreadcrumb(
+    activeCategoryId,
+    categories
+  );
+
+  const currentCategoryName = currentCat
+    ? currentParent
+      ? `${currentParent.name} / ${currentCat.name}`
+      : currentCat.name
     : showOnlyStarred
     ? '星标精选'
     : showOnlyPinned
@@ -346,13 +594,10 @@ function BookmarkHubApp() {
     if (touchStartX.current === null) return;
     const touchEndX = e.changedTouches[0].clientX;
     const diff = touchStartX.current - touchEndX;
-    // Swipe left: next view mode
     if (diff > 80) {
       if (viewMode === 'card') handleChangeViewMode('list');
       else if (viewMode === 'list') handleChangeViewMode('group');
-    }
-    // Swipe right: prev view mode
-    else if (diff < -80) {
+    } else if (diff < -80) {
       if (viewMode === 'group') handleChangeViewMode('list');
       else if (viewMode === 'list') handleChangeViewMode('card');
     }
@@ -379,321 +624,417 @@ function BookmarkHubApp() {
         }}
         onOpenStatsModal={() => setIsStatsModalOpen(true)}
         onOpenImportExportModal={() => setIsImportExportOpen(true)}
+        onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
         onToggleSidebarMobile={() => setIsSidebarMobileOpen((prev) => !prev)}
         isDark={isDark}
         onToggleTheme={handleToggleTheme}
+        inactiveCount={inactiveCount}
       />
 
-      {/* Main Workspace Split */}
-      <div className="flex-1 flex max-w-400 w-full mx-auto">
-        {/* Left Sidebar */}
-        <Sidebar
-          categories={categories}
-          bookmarks={bookmarks}
-          activeCategoryId={activeCategoryId}
-          onSelectCategory={(id) => {
-            setActiveCategoryId(id);
-            if (id !== null) {
-              setShowOnlyStarred(false);
-              setShowOnlyPinned(false);
-            }
-          }}
-          showOnlyStarred={showOnlyStarred}
-          onToggleShowStarred={() => {
-            setShowOnlyStarred(!showOnlyStarred);
-            if (!showOnlyStarred) {
-              setActiveCategoryId(null);
-              setShowOnlyPinned(false);
-            }
-          }}
-          showOnlyPinned={showOnlyPinned}
-          onToggleShowPinned={() => {
-            setShowOnlyPinned(!showOnlyPinned);
-            if (!showOnlyPinned) {
-              setActiveCategoryId(null);
-              setShowOnlyStarred(false);
-            }
-          }}
-          selectedTag={selectedTag}
-          onSelectTag={setSelectedTag}
-          allTags={allTags}
-          onOpenCategoryModal={() => setIsCategoryModalOpen(true)}
-          isOpenMobile={isSidebarMobileOpen}
-          onCloseMobile={() => setIsSidebarMobileOpen(false)}
-        />
+      {/* DndContext wrapping both Sidebar and Main Viewport to enable cross-component drop */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={customCollisionDetection}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex-1 flex max-w-400 w-full mx-auto">
+          {/* Left Sidebar with Droppable Category Targets */}
+          <Sidebar
+            categories={categories}
+            bookmarks={bookmarks}
+            activeCategoryId={activeCategoryId}
+            onSelectCategory={(id) => {
+              setActiveCategoryId(id);
+              if (id !== null) {
+                setShowOnlyStarred(false);
+                setShowOnlyPinned(false);
+              }
+            }}
+            showOnlyStarred={showOnlyStarred}
+            onToggleShowStarred={() => {
+              setShowOnlyStarred(!showOnlyStarred);
+              if (!showOnlyStarred) {
+                setActiveCategoryId(null);
+                setShowOnlyPinned(false);
+              }
+            }}
+            showOnlyPinned={showOnlyPinned}
+            onToggleShowPinned={() => {
+              setShowOnlyPinned(!showOnlyPinned);
+              if (!showOnlyPinned) {
+                setActiveCategoryId(null);
+                setShowOnlyStarred(false);
+              }
+            }}
+            selectedTag={selectedTag}
+            onSelectTag={setSelectedTag}
+            allTags={allTags}
+            onOpenCategoryModal={() => setIsCategoryModalOpen(true)}
+            onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
+            isOpenMobile={isSidebarMobileOpen}
+            onCloseMobile={() => setIsSidebarMobileOpen(false)}
+            isDraggingBookmark={!!activeDragBookmark}
+            inactiveCount={inactiveCount}
+          />
 
-        {/* Content Viewport */}
-        <main
-          className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 flex flex-col"
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Breadcrumb / Section Header & Controls */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
-                  {currentCategoryName}
-                </h1>
-                <span className="text-xs font-mono tabular-nums text-neutral-400 dark:text-neutral-500 pt-0.5">
-                  ({filteredAndSortedBookmarks.length})
-                </span>
-              </div>
-              <p className="text-xs text-neutral-500 mt-0.5">
-                {activeCategoryId
-                  ? `${categoryMap.get(activeCategoryId)?.description || '分类收藏目录'} · 支持置顶与星标`
-                  : '集中管理、分类检索、点击统计'}
-              </p>
-            </div>
+          {/* Content Viewport */}
+          <main
+            className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 pb-20 md:pb-8 flex flex-col"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* 1. Daily Picks Banner: Shows one random unvisited bookmarked URL every day */}
+            <DailyPicksBanner
+              bookmarks={bookmarks}
+              categories={categories}
+              onRecordClick={handleRecordClick}
+              onShowQrCode={handleShowQrCode}
+              onSelectCategory={(catId) => setActiveCategoryId(catId)}
+              onSelectTag={(tag) => setSelectedTag(tag)}
+            />
 
-            {/* Controls Bar: Search Box + Sort Selector + Batch CTA */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* In-page Real-time Search Input */}
-              <div className="relative flex-1 sm:w-64 sm:flex-initial">
-                <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="搜索网址、拼音首字母..."
-                  className="w-full pl-8 pr-7 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Sort Dropdown */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 text-xs">
-                <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
-                <select
-                  value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value as SortOption)}
-                  className="bg-transparent focus:outline-hidden cursor-pointer text-xs"
-                >
-                  <option value="custom" className="dark:bg-neutral-900">默认排序 (置顶优先)</option>
-                  <option value="clicks_desc" className="dark:bg-neutral-900">访问最多 (Top)</option>
-                  <option value="recent_click" className="dark:bg-neutral-900">最近访问</option>
-                  <option value="created_desc" className="dark:bg-neutral-900">最新添加</option>
-                  <option value="title_asc" className="dark:bg-neutral-900">标题字母 (A-Z)</option>
-                </select>
-              </div>
-
-              {/* Batch Add Button */}
-              <button
-                type="button"
-                onClick={() => setIsBatchAddOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
-                title="批量导入多条网址"
-              >
-                <ListPlus className="w-3.5 h-3.5" />
-                <span>批量添加</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Active Filter Badges (if any active) */}
-          {(searchQuery || selectedTag || showOnlyStarred || showOnlyPinned || activeCategoryId) && (
-            <div className="flex items-center flex-wrap gap-2 mb-4 text-xs">
-              <span className="text-neutral-400 text-[11px]">当前过滤:</span>
-
-              {activeCategoryId && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
-                  分类: {categoryMap.get(activeCategoryId)?.name}
-                  <button
-                    type="button"
-                    onClick={() => setActiveCategoryId(null)}
-                    className="hover:text-rose-500"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-
-              {selectedTag && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
-                  #{selectedTag}
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTag(null)}
-                    className="hover:text-rose-500"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-
-              {showOnlyStarred && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40">
-                  ⭐ 星标
-                  <button
-                    type="button"
-                    onClick={() => setShowOnlyStarred(false)}
-                    className="hover:text-rose-500"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-
-              {showOnlyPinned && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
-                  📌 置顶
-                  <button
-                    type="button"
-                    onClick={() => setShowOnlyPinned(false)}
-                    className="hover:text-rose-500"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-
-              {searchQuery && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
-                  关键词: &ldquo;{searchQuery}&rdquo;
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    className="hover:text-rose-500"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveCategoryId(null);
-                  setSelectedTag(null);
-                  setShowOnlyStarred(false);
-                  setShowOnlyPinned(false);
-                  setSearchQuery('');
-                }}
-                className="text-[11px] text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 underline decoration-dotted ml-1"
-              >
-                重置全部
-              </button>
-            </div>
-          )}
-
-          {/* Bookmarks Render Area */}
-          <div className="flex-1">
-            {filteredAndSortedBookmarks.length > 0 ? (
-              <>
-                {/* 1. Card View */}
-                {viewMode === 'card' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
-                    {filteredAndSortedBookmarks.map((bm) => (
-                      <BookmarkCard
-                        key={bm.id}
-                        bookmark={bm}
-                        category={categoryMap.get(bm.categoryId)}
-                        onEdit={(bookmark) => {
-                          setBookmarkToEdit(bookmark);
-                          setIsAddEditOpen(true);
-                        }}
-                        onDelete={handleDeleteBookmark}
-                        onTogglePin={handleTogglePin}
-                        onToggleStar={handleToggleStar}
-                        onRecordClick={handleRecordClick}
-                        onSelectTag={(tag) => setSelectedTag(tag)}
-                      />
-                    ))}
+            {/* Inactive Archive Banner if currently browsing '已归档' category */}
+            {activeCategoryId === ARCHIVED_CATEGORY_ID && (
+              <div className="mb-6 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/70 dark:bg-neutral-900/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-base leading-none">📦</span>
+                  <div>
+                    <div className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      「已归档」分类管理
+                    </div>
+                    <div className="text-neutral-500 mt-0.5">
+                      此专区存放超 6 个月未访问的书签，避免干扰主界面。点击访问即可重新唤醒活跃度，或拖拽卡片至其他分类移出归档。
+                    </div>
                   </div>
-                )}
-
-                {/* 2. List View */}
-                {viewMode === 'list' && (
-                  <div className="space-y-1.5">
-                    {filteredAndSortedBookmarks.map((bm) => (
-                      <BookmarkListRow
-                        key={bm.id}
-                        bookmark={bm}
-                        category={categoryMap.get(bm.categoryId)}
-                        onEdit={(bookmark) => {
-                          setBookmarkToEdit(bookmark);
-                          setIsAddEditOpen(true);
-                        }}
-                        onDelete={handleDeleteBookmark}
-                        onTogglePin={handleTogglePin}
-                        onToggleStar={handleToggleStar}
-                        onRecordClick={handleRecordClick}
-                        onSelectTag={(tag) => setSelectedTag(tag)}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* 3. Grouped by Category View */}
-                {viewMode === 'group' && (
-                  <BookmarkGroupView
-                    categories={activeCategoryId ? categories.filter((c) => c.id === activeCategoryId) : categories}
-                    bookmarks={filteredAndSortedBookmarks}
-                    onEdit={(bookmark) => {
-                      setBookmarkToEdit(bookmark);
-                      setIsAddEditOpen(true);
-                    }}
-                    onDelete={handleDeleteBookmark}
-                    onTogglePin={handleTogglePin}
-                    onToggleStar={handleToggleStar}
-                    onRecordClick={handleRecordClick}
-                    onSelectTag={(tag) => setSelectedTag(tag)}
-                  />
-                )}
-              </>
-            ) : (
-              /* Empty State */
-              <div className="py-20 flex flex-col items-center justify-center text-center">
-                <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 mb-3">
-                  <Inbox className="w-6 h-6" />
                 </div>
-                <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
-                  未找到匹配的书签
-                </h3>
-                <p className="text-xs text-neutral-500 max-w-sm mb-4">
-                  当前筛选条件或搜索关键词下暂无内容，您可以重置筛选条件，或直接添加新书签。
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsArchiveModalOpen(true)}
+                  className="px-3 py-1.5 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-medium text-neutral-800 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-750 transition-colors shrink-0 self-start sm:self-center"
+                >
+                  管理与恢复归档
+                </button>
+              </div>
+            )}
+            {/* Breadcrumb / Section Header & Controls */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+              <div>
                 <div className="flex items-center gap-2">
-                  {(searchQuery || selectedTag || showOnlyStarred || showOnlyPinned || activeCategoryId) && (
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+                    {currentCategoryName}
+                  </h1>
+                  <span className="text-xs font-mono tabular-nums text-neutral-400 dark:text-neutral-500 pt-0.5">
+                    ({filteredAndSortedBookmarks.length})
+                  </span>
+                </div>
+                <div className="flex items-center flex-wrap gap-2 text-xs text-neutral-500 mt-0.5">
+                  <span>
+                    {activeCategoryId
+                      ? `${categoryMap.get(activeCategoryId)?.description || '分类收藏目录'} · 支持置顶与星标`
+                      : '集中管理、分类检索、点击统计'}
+                  </span>
+                  {viewMode === 'card' && (
+                    <>
+                      <span aria-hidden="true">·</span>
+                      <span className="flex items-center gap-1 text-neutral-400">
+                        <GripVertical className="w-3 h-3 text-indigo-500" />
+                        <span>可拖拽卡片重排，或拖至左侧分类快速归类</span>
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Controls Bar: Search Box + Sort Selector + Batch CTA */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* In-page Real-time Search Input */}
+                <div className="relative flex-1 sm:w-64 sm:flex-initial">
+                  <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="搜索网址、拼音首字母..."
+                    className="w-full pl-8 pr-7 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 text-xs">
+                  <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
+                  <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value as SortOption)}
+                    className="bg-transparent focus:outline-hidden cursor-pointer text-xs"
+                  >
+                    <option value="custom" className="dark:bg-neutral-900">默认排序 (拖拽顺序)</option>
+                    <option value="clicks_desc" className="dark:bg-neutral-900">访问最多 (Top)</option>
+                    <option value="recent_click" className="dark:bg-neutral-900">最近访问</option>
+                    <option value="created_desc" className="dark:bg-neutral-900">最新添加</option>
+                    <option value="title_asc" className="dark:bg-neutral-900">标题字母 (A-Z)</option>
+                  </select>
+                </div>
+
+                {/* Batch Add Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsBatchAddOpen(true)}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+                  title="批量导入多条网址"
+                >
+                  <ListPlus className="w-3.5 h-3.5" />
+                  <span>批量添加</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Active Filter Badges */}
+            {(searchQuery || selectedTag || showOnlyStarred || showOnlyPinned || activeCategoryId) && (
+              <div className="flex items-center flex-wrap gap-2 mb-4 text-xs">
+                <span className="text-neutral-400 text-[11px]">当前过滤:</span>
+
+                {activeCategoryId && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+                    分类: {currentParent ? `${currentParent.name} / ` : ''}{currentCat?.name}
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategoryId(null)}
+                      className="hover:text-rose-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                )}
+
+                {selectedTag && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+                    #{selectedTag}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTag(null)}
+                      className="hover:text-rose-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                )}
+
+                {showOnlyStarred && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40">
+                    ⭐ 星标
+                    <button
+                      type="button"
+                      onClick={() => setShowOnlyStarred(false)}
+                      className="hover:text-rose-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                )}
+
+                {showOnlyPinned && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
+                    📌 置顶
+                    <button
+                      type="button"
+                      onClick={() => setShowOnlyPinned(false)}
+                      className="hover:text-rose-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                )}
+
+                {searchQuery && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
+                    关键词: &ldquo;{searchQuery}&rdquo;
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="hover:text-rose-500"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategoryId(null);
+                    setSelectedTag(null);
+                    setShowOnlyStarred(false);
+                    setShowOnlyPinned(false);
+                    setSearchQuery('');
+                  }}
+                  className="text-[11px] text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 underline decoration-dotted ml-1"
+                >
+                  重置全部
+                </button>
+              </div>
+            )}
+
+            {/* Bookmarks Render Area */}
+            <div className="flex-1">
+              {filteredAndSortedBookmarks.length > 0 ? (
+                <>
+                  {/* 1. Card View with dnd-kit Drag-and-Drop Sorting */}
+                  {viewMode === 'card' && (
+                    <SortableContext
+                      items={filteredAndSortedBookmarks.map((b) => b.id)}
+                      strategy={rectSortingStrategy}
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                        {filteredAndSortedBookmarks.map((bm) => (
+                          <SortableBookmarkCard
+                            key={bm.id}
+                            bookmark={bm}
+                            category={getDisplayCategory(bm.categoryId)}
+                            onEdit={(bookmark) => {
+                              setBookmarkToEdit(bookmark);
+                              setIsAddEditOpen(true);
+                            }}
+                            onDelete={handleDeleteBookmark}
+                            onTogglePin={handleTogglePin}
+                            onToggleStar={handleToggleStar}
+                            onRecordClick={handleRecordClick}
+                            onSelectTag={(tag) => setSelectedTag(tag)}
+                            onShowQrCode={handleShowQrCode}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  )}
+
+                  {/* 2. List View */}
+                  {viewMode === 'list' && (
+                    <div className="space-y-1.5">
+                      {filteredAndSortedBookmarks.map((bm) => (
+                        <BookmarkListRow
+                          key={bm.id}
+                          bookmark={bm}
+                          category={getDisplayCategory(bm.categoryId)}
+                          onEdit={(bookmark) => {
+                            setBookmarkToEdit(bookmark);
+                            setIsAddEditOpen(true);
+                          }}
+                          onDelete={handleDeleteBookmark}
+                          onTogglePin={handleTogglePin}
+                          onToggleStar={handleToggleStar}
+                          onRecordClick={handleRecordClick}
+                          onSelectTag={(tag) => setSelectedTag(tag)}
+                          onShowQrCode={handleShowQrCode}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 3. Grouped by Category View */}
+                  {viewMode === 'group' && (
+                    <BookmarkGroupView
+                      categories={categories}
+                      bookmarks={filteredAndSortedBookmarks}
+                      activeCategoryId={activeCategoryId}
+                      getDisplayCategory={getDisplayCategory}
+                      onEdit={(bookmark) => {
+                        setBookmarkToEdit(bookmark);
+                        setIsAddEditOpen(true);
+                      }}
+                      onDelete={handleDeleteBookmark}
+                      onTogglePin={handleTogglePin}
+                      onToggleStar={handleToggleStar}
+                      onRecordClick={handleRecordClick}
+                      onSelectTag={(tag) => setSelectedTag(tag)}
+                      onShowQrCode={handleShowQrCode}
+                    />
+                  )}
+                </>
+              ) : (
+                /* Empty State */
+                <div className="py-20 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 mb-3">
+                    <Inbox className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">
+                    未找到匹配的书签
+                  </h3>
+                  <p className="text-xs text-neutral-500 max-w-sm mb-4">
+                    当前筛选条件或搜索关键词下暂无内容，您可以重置筛选条件，或直接添加新书签。
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {(searchQuery || selectedTag || showOnlyStarred || showOnlyPinned || activeCategoryId) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveCategoryId(null);
+                          setSelectedTag(null);
+                          setShowOnlyStarred(false);
+                          setShowOnlyPinned(false);
+                          setSearchQuery('');
+                        }}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                      >
+                        清空筛选
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
-                        setActiveCategoryId(null);
-                        setSelectedTag(null);
-                        setShowOnlyStarred(false);
-                        setShowOnlyPinned(false);
-                        setSearchQuery('');
+                        setBookmarkToEdit(null);
+                        setIsAddEditOpen(true);
                       }}
-                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                      className="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
                     >
-                      清空筛选
+                      添加网址
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBookmarkToEdit(null);
-                      setIsAddEditOpen(true);
-                    }}
-                    className="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
-                  >
-                    添加网址
-                  </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
+
+        {/* Drag Overlay: Renders floating preview of the dragged bookmark under pointer */}
+        <DragOverlay dropAnimation={null}>
+          {activeDragBookmark ? (
+            <div className="p-3 w-64 rounded-xl border border-neutral-400 dark:border-neutral-600 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md shadow-2xl pointer-events-none select-none flex items-center gap-2.5 z-50">
+              <div className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center shrink-0 overflow-hidden">
+                <img
+                  src={getFaviconUrl(activeDragBookmark.url)}
+                  alt=""
+                  className="w-4 h-4 object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+                <Globe className="w-3.5 h-3.5 text-neutral-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                  {activeDragBookmark.title}
+                </div>
+                <div className="text-[10px] font-mono text-neutral-400 truncate">
+                  {extractDomain(activeDragBookmark.url)}
                 </div>
               </div>
-            )}
-          </div>
-        </main>
-      </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 font-medium">
+                拖动中
+              </span>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Mobile Bottom Navigation Bar */}
       <MobileNav
@@ -719,6 +1060,16 @@ function BookmarkHubApp() {
           !selectedTag &&
           !searchQuery
         }
+      />
+
+      {/* QR Code Modal */}
+      <QrCodeModal
+        isOpen={isQrModalOpen}
+        onClose={() => {
+          setIsQrModalOpen(false);
+          setQrBookmark(null);
+        }}
+        bookmark={qrBookmark}
       />
 
       {/* Modals & Overlays */}
@@ -786,8 +1137,21 @@ function BookmarkHubApp() {
         onOpenCategoryModal={() => setIsCategoryModalOpen(true)}
         onOpenStatsModal={() => setIsStatsModalOpen(true)}
         onOpenImportExportModal={() => setIsImportExportOpen(true)}
+        onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
         onToggleTheme={handleToggleTheme}
         isDark={isDark}
+      />
+
+      {/* Archive Management Modal */}
+      <ArchiveModal
+        isOpen={isArchiveModalOpen}
+        onClose={() => setIsArchiveModalOpen(false)}
+        bookmarks={bookmarks}
+        categories={categories}
+        onArchiveBookmarks={handleArchiveBookmarks}
+        onRestoreBookmarks={handleRestoreBookmarks}
+        autoArchiveEnabled={autoArchiveEnabled}
+        onToggleAutoArchive={handleToggleAutoArchive}
       />
     </div>
   );

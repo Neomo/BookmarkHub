@@ -12,6 +12,7 @@ import {
   Sun,
   Download,
   Menu,
+  Archive,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -20,10 +21,12 @@ interface HeaderProps {
   onOpenAddModal: () => void;
   onOpenStatsModal: () => void;
   onOpenImportExportModal: () => void;
+  onOpenArchiveModal?: () => void;
   onOpenCommandPalette: () => void;
   onToggleSidebarMobile: () => void;
   isDark: boolean;
   onToggleTheme: () => void;
+  inactiveCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,10 +35,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAddModal,
   onOpenStatsModal,
   onOpenImportExportModal,
+  onOpenArchiveModal,
   onOpenCommandPalette,
   onToggleSidebarMobile,
   isDark,
   onToggleTheme,
+  inactiveCount = 0,
 }) => {
   return (
     <header className="sticky top-0 z-30 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 md:gap-8">
@@ -128,6 +133,24 @@ export const Header: React.FC<HeaderProps> = ({
           <Download className="w-3.5 h-3.5" />
           <span>导入导出</span>
         </button>
+
+        {onOpenArchiveModal && (
+          <button
+            type="button"
+            onClick={onOpenArchiveModal}
+            className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+            title="6 个月未访问闲置书签智能归档"
+          >
+            <Archive className="w-3.5 h-3.5" />
+            <span>闲置归档</span>
+            {inactiveCount > 0 && (
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+            )}
+          </button>
+        )}
       </nav>
 
       {/* Zone 3: Search trigger & 1 primary CTA button */}

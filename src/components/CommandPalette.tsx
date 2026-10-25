@@ -14,6 +14,7 @@ import {
   Sun,
   Globe,
   CornerDownLeft,
+  Archive,
 } from 'lucide-react';
 
 interface CommandPaletteProps {
@@ -27,6 +28,7 @@ interface CommandPaletteProps {
   onOpenCategoryModal: () => void;
   onOpenStatsModal: () => void;
   onOpenImportExportModal: () => void;
+  onOpenArchiveModal?: () => void;
   onToggleTheme: () => void;
   isDark: boolean;
 }
@@ -42,6 +44,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenCategoryModal,
   onOpenStatsModal,
   onOpenImportExportModal,
+  onOpenArchiveModal,
   onToggleTheme,
   isDark,
 }) => {
@@ -59,9 +62,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   if (!isOpen) return null;
 
+  const catObjMap = new Map<string, Category>();
+  for (const cat of categories) {
+    catObjMap.set(cat.id, cat);
+  }
+
   const categoryMap = new Map<string, string>();
   for (const cat of categories) {
-    categoryMap.set(cat.id, cat.name);
+    if (cat.parentId && catObjMap.has(cat.parentId)) {
+      categoryMap.set(cat.id, `${catObjMap.get(cat.parentId)!.name} / ${cat.name}`);
+    } else {
+      categoryMap.set(cat.id, cat.name);
+    }
   }
 
   // Filter bookmarks with pinyin & fuzzy search
@@ -97,6 +109,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: '快捷操作',
       icon: FolderCog,
       action: onOpenCategoryModal,
+    },
+    {
+      id: 'act-archive',
+      title: '闲置书签智能归档（超过 6 个月未访问）',
+      category: '维护清理',
+      icon: Archive,
+      action: onOpenArchiveModal || (() => {}),
     },
     {
       id: 'act-stats',

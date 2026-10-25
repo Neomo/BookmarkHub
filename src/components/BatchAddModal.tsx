@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Category } from '../types';
 import { parseBatchInput, ParsedBatchItem } from '../utils/url';
+import { buildCategoryTree } from '../utils/storage';
 import { X, ListPlus, Check } from 'lucide-react';
 import { useToast } from './Toast';
 
@@ -21,6 +22,7 @@ export const BatchAddModal: React.FC<BatchAddModalProps> = ({
   const [selectedCategoryId, setSelectedCategoryId] = useState(categories[0]?.id || '');
   const [commonTagsInput, setCommonTagsInput] = useState('');
   const { showToast } = useToast();
+  const categoryTree = useMemo(() => buildCategoryTree(categories), [categories]);
 
   const parsedItems = useMemo(() => {
     return parseBatchInput(inputText);
@@ -98,10 +100,15 @@ export const BatchAddModal: React.FC<BatchAddModalProps> = ({
                 onChange={(e) => setSelectedCategoryId(e.target.value)}
                 className="w-full px-3 py-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100"
               >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
+                {categoryTree.map((root) => (
+                  <optgroup key={root.id} label={root.name}>
+                    <option value={root.id}>{root.name} (一级目录)</option>
+                    {root.children.map((sub) => (
+                      <option key={sub.id} value={sub.id}>
+                        &nbsp;&nbsp;↳ {sub.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>

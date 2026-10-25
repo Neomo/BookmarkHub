@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bookmark, Category } from '../types';
 import { extractDomain, getFaviconUrl, formatRelativeTime } from '../utils/url';
+import { buildCategoryTree } from '../utils/storage';
 import {
   X,
   BarChart3,
@@ -32,7 +33,6 @@ export const StatsModal: React.FC<StatsModalProps> = ({
 
   const totalBookmarks = bookmarks.length;
   const starredCount = bookmarks.filter((b) => b.isStarred).length;
-  const pinnedCount = bookmarks.filter((b) => b.isPinned).length;
   const totalClicks = bookmarks.reduce((acc, curr) => acc + (curr.clickCount || 0), 0);
 
   // Category counts
@@ -41,14 +41,19 @@ export const StatsModal: React.FC<StatsModalProps> = ({
     catCountMap.set(b.categoryId, (catCountMap.get(b.categoryId) || 0) + 1);
   }
 
-  // Find top category
+  const categoryTree = buildCategoryTree(categories);
+
+  // Find top category (including cumulative subcategories)
   let topCategoryName = '暂无';
   let maxCatCount = 0;
-  for (const cat of categories) {
-    const c = catCountMap.get(cat.id) || 0;
-    if (c > maxCatCount) {
-      maxCatCount = c;
-      topCategoryName = cat.name;
+  for (const root of categoryTree) {
+    let sum = catCountMap.get(root.id) || 0;
+    for (const child of root.children) {
+      sum += catCountMap.get(child.id) || 0;
+    }
+    if (sum > maxCatCount) {
+      maxCatCount = sum;
+      topCategoryName = root.name;
     }
   }
 
@@ -215,32 +220,54 @@ export const StatsModal: React.FC<StatsModalProps> = ({
             </div>
           </div>
 
-          {/* Category Distribution Breakdown */}
+          {/* 2-Level Category Distribution Breakdown */}
           <div>
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
-              各分类收藏占比
+              各级分类收藏占比
             </h3>
-            <div className="space-y-2.5">
-              {categories.map((cat) => {
-                const count = catCountMap.get(cat.id) || 0;
-                const percentage = totalBookmarks > 0 ? Math.round((count / totalBookmarks) * 100) : 0;
+            <div className="space-y-4">
+              {categoryTree.map((parent) => {
+                let cumulativeCount = catCountMap.get(parent.id) || 0;
+                for (const child of parent.children) {
+                  cumulativeCount += catCountMap.get(child.id) || 0;
+                }
+
+                const percentage =
+                  totalBookmarks > 0 ? Math.round((cumulativeCount / totalBookmarks) * 100) : 0;
+
                 return (
-                  <div key={cat.id} className="space-y-1">
-                    <div className="flex justify-between text-xs text-neutral-600 dark:text-neutral-400 tabular-nums">
-                      <span className="font-medium">{cat.name}</span>
+                  <div key={parent.id} className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/40 space-y-2">
+                    <div className="flex justify-between text-xs text-neutral-700 dark:text-neutral-300 tabular-nums">
+                      <span className="font-semibold">{parent.name}</span>
                       <span>
-                        {count} 项 ({percentage}%)
+                        {cumulativeCount} 项 ({percentage}%)
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+
+                    <div className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-300"
                         style={{
                           width: `${percentage}%`,
-                          backgroundColor: cat.color || '#4f46e5',
+                          backgroundColor: parent.color || '#6366f1',
                         }}
                       />
                     </div>
+
+                    {/* Subcategories list */}
+                    {parent.children.length > 0 && (
+                      <div className="pt-1.5 pl-3 border-l border-neutral-200 dark:border-neutral-800 space-y-1.5 text-[11px] text-neutral-500">
+                        {parent.children.map((child) => {
+                          const childCount = catCountMap.get(child.id) || 0;
+                          return (
+                            <div key={child.id} className="flex justify-between items-center">
+                              <span>↳ {child.name}</span>
+                              <span className="font-mono tabular-nums">{childCount} 项</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}

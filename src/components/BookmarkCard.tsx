@@ -10,6 +10,8 @@ import {
   Edit2,
   Trash2,
   Globe,
+  QrCode,
+  GripVertical,
 } from 'lucide-react';
 import { useToast } from './Toast';
 
@@ -22,6 +24,9 @@ interface BookmarkCardProps {
   onToggleStar: (id: string) => void;
   onRecordClick: (bookmark: Bookmark) => void;
   onSelectTag?: (tag: string) => void;
+  onShowQrCode?: (bookmark: Bookmark) => void;
+  dragHandleProps?: Record<string, any>;
+  isDragging?: boolean;
 }
 
 export const BookmarkCard: React.FC<BookmarkCardProps> = ({
@@ -33,6 +38,9 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
   onToggleStar,
   onRecordClick,
   onSelectTag,
+  onShowQrCode,
+  dragHandleProps,
+  isDragging,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [faviconError, setFaviconError] = useState(false);
@@ -42,9 +50,13 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
   const faviconUrl = getFaviconUrl(bookmark.url);
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Avoid triggering card click if clicking on buttons or menu
+    // Avoid triggering card click if clicking on buttons or menu or drag handle
     const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('[data-prevent-card-click="true"]')) {
+    if (
+      target.closest('button') ||
+      target.closest('[data-prevent-card-click="true"]') ||
+      target.closest('[data-drag-handle="true"]')
+    ) {
       return;
     }
     onRecordClick(bookmark);
@@ -58,19 +70,40 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
     setMenuOpen(false);
   };
 
+  const handleQrClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpen(false);
+    onShowQrCode?.(bookmark);
+  };
+
   return (
     <div
       onClick={handleCardClick}
       className={`group relative flex flex-col justify-between p-4 rounded-xl border bg-white dark:bg-neutral-900 transition-all duration-200 cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-700 hover:shadow-sm ${
+        isDragging ? 'opacity-40 scale-[0.98] shadow-lg ring-2 ring-neutral-400 dark:ring-neutral-600 z-30' : ''
+      } ${
         bookmark.isPinned
           ? 'border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-900/80 ring-1 ring-neutral-200 dark:ring-neutral-800'
           : 'border-neutral-200 dark:border-neutral-800'
       }`}
     >
       <div>
-        {/* Top bar of card: Favicon, Domain, Actions */}
-        <div className="flex items-center justify-between gap-2 mb-2.5">
-          <div className="flex items-center gap-2.5 min-w-0">
+        {/* Top bar of card: Drag Handle, Favicon, Domain, Actions */}
+        <div className="flex items-center justify-between gap-1.5 mb-2.5">
+          <div className="flex items-center gap-2 min-w-0">
+            {/* Drag Handle (if provided) */}
+            {dragHandleProps && (
+              <div
+                {...dragHandleProps}
+                data-drag-handle="true"
+                data-prevent-card-click="true"
+                title="按住拖拽排序"
+                className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-neutral-300 hover:text-neutral-600 dark:text-neutral-600 dark:hover:text-neutral-300 rounded transition-colors"
+              >
+                <GripVertical className="w-3.5 h-3.5" />
+              </div>
+            )}
+
             <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-750 flex items-center justify-center shrink-0 overflow-hidden">
               {!faviconError && faviconUrl ? (
                 <img
@@ -93,6 +126,16 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
 
           {/* Quick action buttons */}
           <div className="flex items-center gap-0.5 shrink-0" data-prevent-card-click="true">
+            {/* QR Code trigger */}
+            <button
+              type="button"
+              onClick={handleQrClick}
+              title="生成手机扫码二维码"
+              className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+            </button>
+
             <button
               type="button"
               onClick={(e) => {
@@ -149,6 +192,14 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                     }}
                   />
                   <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg shadow-lg py-1 z-30 text-xs">
+                    <button
+                      type="button"
+                      onClick={handleQrClick}
+                      className="w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-200"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>手机扫码</span>
+                    </button>
                     <button
                       type="button"
                       onClick={handleCopyUrl}

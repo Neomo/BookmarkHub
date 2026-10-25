@@ -1,14 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useDroppable } from '@dnd-kit/core';
 import { Category, Bookmark } from '../types';
 import { CategoryIcon } from './CategoryIcon';
+import { buildCategoryTree, CategoryTreeItem } from '../utils/storage';
 import {
   Bookmark as BookmarkIcon,
   Star,
   Pin,
   Settings2,
   FolderPlus,
-  Hash,
   X,
+  CornerDownRight,
+  ChevronDown,
+  ChevronRight,
+  Archive,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,9 +29,119 @@ interface SidebarProps {
   onSelectTag: (tag: string | null) => void;
   allTags: string[];
   onOpenCategoryModal: () => void;
+  onOpenArchiveModal?: () => void;
   isOpenMobile: boolean;
   onCloseMobile: () => void;
+  isDraggingBookmark?: boolean;
+  inactiveCount?: number;
 }
+
+interface DroppableCategoryButtonProps {
+  category: Category;
+  droppableId: string;
+  isSelected: boolean;
+  count: number;
+  onSelect: () => void;
+  isDraggingBookmark?: boolean;
+  isSubcategory?: boolean;
+  hasChildren?: boolean;
+  isExpanded?: boolean;
+  onToggleExpand?: (e: React.MouseEvent) => void;
+}
+
+const DroppableCategoryButton: React.FC<DroppableCategoryButtonProps> = ({
+  category,
+  droppableId,
+  isSelected,
+  count,
+  onSelect,
+  isDraggingBookmark,
+  isSubcategory = false,
+  hasChildren = false,
+  isExpanded = true,
+  onToggleExpand,
+}) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: droppableId,
+    data: {
+      type: 'category',
+      categoryId: category.id,
+      categoryName: category.name,
+    },
+  });
+
+  return (
+    <div ref={setNodeRef} className="relative">
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`w-full flex items-center justify-between rounded-lg transition-all duration-150 ${
+          isSubcategory
+            ? 'pl-6 pr-2.5 py-1 text-[11px]'
+            : 'px-2.5 py-1.5 text-xs'
+        } ${
+          isOver
+            ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 ring-2 ring-neutral-900 dark:ring-neutral-100 scale-[1.01] shadow-md z-10'
+            : isSelected
+            ? 'bg-neutral-200/80 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium'
+            : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-neutral-200'
+        } ${
+          isDraggingBookmark && !isOver
+            ? 'border border-dashed border-neutral-300 dark:border-neutral-700/80'
+            : ''
+        }`}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          {/* Chevron expand/collapse for parent category */}
+          {hasChildren && onToggleExpand && (
+            <span
+              onClick={onToggleExpand}
+              className="p-0.5 -ml-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 cursor-pointer rounded"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5" />
+              )}
+            </span>
+          )}
+
+          {/* Subcategory branch line indicator */}
+          {isSubcategory && (
+            <span className="w-1.5 h-1.5 rounded-full bg-neutral-300 dark:bg-neutral-600 shrink-0 mr-0.5" />
+          )}
+
+          {!isSubcategory && (
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: category.color || '#6366f1' }}
+            />
+          )}
+
+          <CategoryIcon
+            name={category.icon}
+            className={`${isSubcategory ? 'w-3 h-3 text-neutral-400' : 'w-3.5 h-3.5'} shrink-0`}
+          />
+
+          <span className="truncate">{category.name}</span>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0 ml-1.5">
+          {isOver ? (
+            <span className="flex items-center gap-0.5 text-[10px] font-semibold tracking-wide animate-pulse">
+              <CornerDownRight className="w-3 h-3" />
+              <span>移入</span>
+            </span>
+          ) : (
+            <span className="font-mono tabular-nums text-[11px] opacity-70">
+              {count}
+            </span>
+          )}
+        </div>
+      </button>
+    </div>
+  );
+};
 
 export const Sidebar: React.FC<SidebarProps> = ({
   categories,
@@ -41,14 +156,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectTag,
   allTags,
   onOpenCategoryModal,
+  onOpenArchiveModal,
   isOpenMobile,
   onCloseMobile,
+  isDraggingBookmark = false,
+  inactiveCount = 0,
 }) => {
+  // Collapsed state for parent categories
+  const [collapsedParents, setCollapsedParents] = useState<Record<string, boolean>>({});
+
+  const toggleParentCollapse = (parentId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCollapsedParents((prev) => ({
+      ...prev,
+      [parentId]: !prev[parentId],
+    }));
+  };
+
   // Counts
   const totalCount = bookmarks.length;
   const starredCount = bookmarks.filter((b) => b.isStarred).length;
   const pinnedCount = bookmarks.filter((b) => b.isPinned).length;
 
+  // Direct count per category
   const countByCat = new Map<string, number>();
   for (const b of bookmarks) {
     countByCat.set(b.categoryId, (countByCat.get(b.categoryId) || 0) + 1);
@@ -64,7 +194,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   }
 
-  const sidebarContent = (
+  // Build tree
+  const categoryTree = buildCategoryTree(categories);
+
+  // Helper to compute cumulative count for parent including children
+  const getCumulativeCount = (item: CategoryTreeItem): number => {
+    let sum = countByCat.get(item.id) || 0;
+    for (const child of item.children) {
+      sum += countByCat.get(child.id) || 0;
+    }
+    return sum;
+  };
+
+  const renderSidebarContent = (isMobileView = false) => (
     <div className="flex flex-col h-full text-xs">
       {/* Top quick filters */}
       <div className="p-3 space-y-1">
@@ -131,52 +273,101 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="h-px bg-neutral-200 dark:border-neutral-800 my-1 mx-3" />
 
-      {/* Categories section */}
+      {/* 2-Level Categories Hierarchy section */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
         <div>
           <div className="flex items-center justify-between px-2 mb-1.5 text-neutral-400 dark:text-neutral-500 font-medium text-[11px]">
-            <span>分类专区</span>
-            <button
-              type="button"
-              onClick={onOpenCategoryModal}
-              className="hover:text-neutral-800 dark:hover:text-neutral-200 p-0.5 rounded transition-colors"
-              title="管理分类与排序"
-            >
-              <Settings2 className="w-3.5 h-3.5" />
-            </button>
+            <span className="flex items-center gap-1">
+              <span>二级分类专区</span>
+              {isDraggingBookmark && (
+                <span className="text-[10px] text-indigo-500 font-normal">
+                  (拖拽归类)
+                </span>
+              )}
+            </span>
+            <div className="flex items-center gap-1">
+              {onOpenArchiveModal && (
+                <button
+                  type="button"
+                  onClick={onOpenArchiveModal}
+                  className="relative hover:text-neutral-800 dark:hover:text-neutral-200 p-0.5 rounded transition-colors text-neutral-400"
+                  title="6 个月未访问闲置书签智能归档"
+                >
+                  <Archive className="w-3.5 h-3.5" />
+                  {inactiveCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  )}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onOpenCategoryModal}
+                className="hover:text-neutral-800 dark:hover:text-neutral-200 p-0.5 rounded transition-colors"
+                title="管理分类与二级结构"
+              >
+                <Settings2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
-          <div className="space-y-0.5">
-            {categories.map((cat) => {
-              const isSelected = activeCategoryId === cat.id;
-              const count = countByCat.get(cat.id) || 0;
+          <div className="space-y-1">
+            {categoryTree.map((parentCat) => {
+              const isSelected = activeCategoryId === parentCat.id;
+              const hasChildren = parentCat.children.length > 0;
+              const isExpanded = !collapsedParents[parentCat.id];
+              const cumulativeCount = getCumulativeCount(parentCat);
+
+              const droppableId = isMobileView
+                ? `droppable-category-mobile-${parentCat.id}`
+                : `droppable-category-${parentCat.id}`;
 
               return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    onSelectCategory(isSelected ? null : cat.id);
-                    onCloseMobile();
-                  }}
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-colors ${
-                    isSelected
-                      ? 'bg-neutral-200/80 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 font-medium'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/60 hover:text-neutral-900 dark:hover:text-neutral-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: cat.color || '#6366f1' }}
-                    />
-                    <CategoryIcon name={cat.icon} className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{cat.name}</span>
-                  </div>
-                  <span className="font-mono tabular-nums text-[11px] opacity-70 ml-2 shrink-0">
-                    {count}
-                  </span>
-                </button>
+                <div key={parentCat.id} className="space-y-0.5">
+                  {/* 1st Level Category */}
+                  <DroppableCategoryButton
+                    category={parentCat}
+                    droppableId={droppableId}
+                    isSelected={isSelected}
+                    count={cumulativeCount}
+                    hasChildren={hasChildren}
+                    isExpanded={isExpanded}
+                    onToggleExpand={(e) => toggleParentCollapse(parentCat.id, e)}
+                    isDraggingBookmark={isDraggingBookmark}
+                    onSelect={() => {
+                      onSelectCategory(isSelected ? null : parentCat.id);
+                      onCloseMobile();
+                    }}
+                  />
+
+                  {/* 2nd Level Subcategories */}
+                  {hasChildren && isExpanded && (
+                    <div className="space-y-0.5 relative pl-2 ml-2 border-l border-neutral-200/80 dark:border-neutral-800">
+                      {parentCat.children.map((subCat) => {
+                        const isSubSelected = activeCategoryId === subCat.id;
+                        const subCount = countByCat.get(subCat.id) || 0;
+                        const subDroppableId = isMobileView
+                          ? `droppable-category-mobile-${subCat.id}`
+                          : `droppable-category-${subCat.id}`;
+
+                        return (
+                          <DroppableCategoryButton
+                            key={subCat.id}
+                            category={subCat}
+                            droppableId={subDroppableId}
+                            isSelected={isSubSelected}
+                            count={subCount}
+                            isSubcategory={true}
+                            isDraggingBookmark={isDraggingBookmark}
+                            onSelect={() => {
+                              onSelectCategory(isSubSelected ? null : subCat.id);
+                              onCloseMobile();
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -237,7 +428,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="w-full py-2 px-3 rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-xs font-medium transition-colors flex items-center justify-center gap-1.5"
         >
           <FolderPlus className="w-3.5 h-3.5" />
-          <span>自定义管理分类</span>
+          <span>管理分类与二级结构</span>
         </button>
       </div>
     </div>
@@ -246,8 +437,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:block w-60 shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 min-h-[calc(100vh-3.5rem)] sticky top-14 self-start">
-        {sidebarContent}
+      <aside className="hidden md:block w-64 shrink-0 border-r border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 min-h-[calc(100vh-3.5rem)] sticky top-14 self-start">
+        {renderSidebarContent(false)}
       </aside>
 
       {/* Mobile Slide-over Drawer */}
@@ -270,7 +461,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-hidden">{sidebarContent}</div>
+            <div className="flex-1 overflow-hidden">{renderSidebarContent(true)}</div>
           </div>
         </div>
       )}
