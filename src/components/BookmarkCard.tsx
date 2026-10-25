@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bookmark, Category } from '../types';
 import { extractDomain, getFaviconUrl, formatRelativeTime } from '../utils/url';
+import { hexToRgba } from '../utils/color';
 import {
   Pin,
   Star,
@@ -76,17 +77,39 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
     onShowQrCode?.(bookmark);
   };
 
+  const hasColor = Boolean(bookmark.color);
+  const cardCustomStyle: React.CSSProperties = hasColor
+    ? {
+        backgroundColor: hexToRgba(bookmark.color!, 0.08),
+        borderColor: hexToRgba(bookmark.color!, 0.35),
+        boxShadow: `0 1px 4px ${hexToRgba(bookmark.color!, 0.12)}`,
+      }
+    : {};
+
   return (
     <div
       onClick={handleCardClick}
-      className={`group relative flex flex-col justify-between p-4 rounded-xl border bg-white dark:bg-neutral-900 transition-all duration-200 cursor-pointer hover:border-neutral-400 dark:hover:border-neutral-700 hover:shadow-sm ${
-        isDragging ? 'opacity-40 scale-[0.98] shadow-lg ring-2 ring-neutral-400 dark:ring-neutral-600 z-30' : ''
+      style={cardCustomStyle}
+      className={`group relative flex flex-col justify-between p-4 rounded-xl border transition-all duration-200 cursor-pointer hover:shadow-sm ${
+        !hasColor
+          ? bookmark.isPinned
+            ? 'border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-900/80 ring-1 ring-neutral-200 dark:ring-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-700'
+            : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-neutral-400 dark:hover:border-neutral-700'
+          : bookmark.isPinned
+          ? 'ring-1 ring-neutral-400/40 hover:brightness-98 dark:hover:brightness-105'
+          : 'hover:brightness-98 dark:hover:brightness-105'
       } ${
-        bookmark.isPinned
-          ? 'border-neutral-300 dark:border-neutral-700 bg-neutral-50/50 dark:bg-neutral-900/80 ring-1 ring-neutral-200 dark:ring-neutral-800'
-          : 'border-neutral-200 dark:border-neutral-800'
+        isDragging ? 'opacity-40 scale-[0.98] shadow-lg ring-2 ring-neutral-400 dark:ring-neutral-600 z-30' : ''
       }`}
     >
+      {/* Top accent line if bookmark has color */}
+      {bookmark.color && (
+        <div
+          className="absolute top-0 left-0 right-0 h-[2.5px] rounded-t-xl"
+          style={{ backgroundColor: bookmark.color }}
+          aria-hidden="true"
+        />
+      )}
       <div>
         {/* Top bar of card: Drag Handle, Favicon, Domain, Actions */}
         <div className="flex items-center justify-between gap-1.5 mb-2.5">
@@ -104,7 +127,17 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
               </div>
             )}
 
-            <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-750 flex items-center justify-center shrink-0 overflow-hidden">
+            <div
+              className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-750 flex items-center justify-center shrink-0 overflow-hidden"
+              style={
+                bookmark.color
+                  ? {
+                      borderColor: hexToRgba(bookmark.color, 0.35),
+                      backgroundColor: hexToRgba(bookmark.color, 0.14),
+                    }
+                  : undefined
+              }
+            >
               {!faviconError && faviconUrl ? (
                 <img
                   src={faviconUrl}

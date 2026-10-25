@@ -54,6 +54,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     createdAt: now - 30 * day,
     updatedAt: now - 30 * day,
     order: 1,
+    color: '#3b82f6',
   },
   {
     id: 'bm-2',
@@ -84,6 +85,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     createdAt: now - 25 * day,
     updatedAt: now - 25 * day,
     order: 3,
+    color: '#f59e0b',
   },
   {
     id: 'bm-4',
@@ -99,6 +101,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     createdAt: now - 28 * day,
     updatedAt: now - 28 * day,
     order: 4,
+    color: '#06b6d4',
   },
   {
     id: 'bm-5',
@@ -114,6 +117,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     createdAt: now - 35 * day,
     updatedAt: now - 35 * day,
     order: 5,
+    color: '#ec4899',
   },
   {
     id: 'bm-6',
@@ -129,6 +133,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     createdAt: now - 20 * day,
     updatedAt: now - 20 * day,
     order: 6,
+    color: '#8b5cf6',
   },
   {
     id: 'bm-7',
@@ -564,6 +569,7 @@ export function calculateImportDiff(
           existing.categoryId !== item.categoryId ||
           existing.isPinned !== item.isPinned ||
           existing.isStarred !== item.isStarred ||
+          existing.color !== item.color ||
           JSON.stringify(existing.tags || []) !== JSON.stringify(item.tags || []);
 
         if (hasDiff) {
@@ -700,6 +706,7 @@ export function executeImport(
         tags: Array.from(new Set([...(b.tags || []), ...(incomingMatch.tags || [])])),
         isPinned: incomingMatch.isPinned ?? b.isPinned,
         isStarred: incomingMatch.isStarred ?? b.isStarred,
+        color: incomingMatch.color !== undefined ? incomingMatch.color : b.color,
         updatedAt: Date.now(),
       };
     }

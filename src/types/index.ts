@@ -13,6 +13,7 @@ export interface Bookmark {
   updatedAt: number;
   order: number;
   healthStatus?: 'unknown' | 'healthy' | 'error' | 'checking';
+  color?: string;
 }
 
 export interface Category {

@@ -246,7 +246,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                           />
                         </div>
                         <div className="min-w-0">
-                          <div className="font-medium truncate">{bm.title}</div>
+                          <div className="font-medium truncate flex items-center gap-1.5">
+                            {bm.color && (
+                              <span
+                                className="w-1.5 h-1.5 rounded-full shrink-0"
+                                style={{ backgroundColor: bm.color }}
+                              />
+                            )}
+                            <span className="truncate">{bm.title}</span>
+                          </div>
                           <div className="text-[11px] text-neutral-400 font-mono truncate">
                             {domain}
                           </div>

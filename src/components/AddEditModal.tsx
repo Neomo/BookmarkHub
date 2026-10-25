@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Bookmark, Category } from '../types';
 import { fetchWebpageTitle } from '../utils/url';
 import { buildCategoryTree } from '../utils/storage';
-import { X, Loader2, Sparkles, Pin, Star, Plus } from 'lucide-react';
+import { BOOKMARK_PALETTE } from '../utils/color';
+import { X, Loader2, Sparkles, Pin, Star, Plus, Check, Palette } from 'lucide-react';
 import { useToast } from './Toast';
 
 interface AddEditModalProps {
@@ -31,6 +32,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [notes, setNotes] = useState('');
+  const [color, setColor] = useState<string | undefined>(undefined);
   const [isPinned, setIsPinned] = useState(false);
   const [isStarred, setIsStarred] = useState(false);
   const [isFetchingTitle, setIsFetchingTitle] = useState(false);
@@ -45,6 +47,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       setNotes(bookmarkToEdit.notes || '');
       setIsPinned(bookmarkToEdit.isPinned);
       setIsStarred(bookmarkToEdit.isStarred);
+      setColor(bookmarkToEdit.color);
     } else {
       setUrl('');
       setTitle('');
@@ -53,6 +56,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       setNotes('');
       setIsPinned(false);
       setIsStarred(false);
+      setColor(undefined);
     }
     setTagInput('');
   }, [bookmarkToEdit, isOpen, initialCategoryId, categories]);
@@ -120,6 +124,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       notes: notes.trim(),
       isPinned,
       isStarred,
+      color: color || undefined,
     });
 
     onClose();
@@ -299,6 +304,74 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
               placeholder="添加简要备注，便于日后搜索与查阅..."
               className="w-full px-3 py-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100 placeholder:text-neutral-400 resize-none"
             />
+          </div>
+
+          {/* Visual Bookmark Color */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                视觉分类颜色 <span className="text-neutral-400 font-normal">(用于卡片高亮与列表装饰条)</span>
+              </label>
+              {color && (
+                <button
+                  type="button"
+                  onClick={() => setColor(undefined)}
+                  className="text-[11px] text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+                >
+                  清除颜色
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Default / No color */}
+              <button
+                type="button"
+                onClick={() => setColor(undefined)}
+                title="无指定颜色"
+                className={`w-7 h-7 rounded-full border flex items-center justify-center transition-all ${
+                  !color
+                    ? 'border-neutral-900 dark:border-neutral-100 ring-2 ring-neutral-900/20 dark:ring-neutral-100/20 scale-105'
+                    : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-400 text-neutral-400'
+                }`}
+              >
+                <span className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">无</span>
+              </button>
+
+              {/* Preset swatches */}
+              {BOOKMARK_PALETTE.map((item) => {
+                const isSelected = color === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => setColor(item.value)}
+                    title={item.label}
+                    style={{ backgroundColor: item.value }}
+                    className={`w-7 h-7 rounded-full transition-all flex items-center justify-center cursor-pointer ${
+                      isSelected
+                        ? 'ring-2 ring-offset-2 ring-neutral-900 dark:ring-neutral-100 dark:ring-offset-neutral-900 scale-110 shadow-xs'
+                        : 'opacity-85 hover:opacity-100 hover:scale-105'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white drop-shadow-xs" />}
+                  </button>
+                );
+              })}
+
+              {/* Custom native color picker */}
+              <label
+                title="自定义颜色"
+                className="relative w-7 h-7 rounded-full border border-dashed border-neutral-300 dark:border-neutral-700 hover:border-neutral-500 cursor-pointer flex items-center justify-center transition-all hover:scale-105"
+              >
+                <input
+                  type="color"
+                  value={color || '#3b82f6'}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                />
+                <Palette className="w-3.5 h-3.5 text-neutral-400" />
+              </label>
+            </div>
           </div>
 
           {/* Pin & Star Switches */}

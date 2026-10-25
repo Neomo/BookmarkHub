@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bookmark, Category } from '../types';
 import { extractDomain, getFaviconUrl, formatRelativeTime } from '../utils/url';
+import { hexToRgba } from '../utils/color';
 import { Pin, Star, Globe, Copy, Edit2, Trash2, ExternalLink, QrCode } from 'lucide-react';
 import { useToast } from './Toast';
 
@@ -46,18 +47,42 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
     showToast('链接已复制到剪贴板', 'info');
   };
 
+  const rowStyle: React.CSSProperties = bookmark.color
+    ? {
+        borderLeftColor: bookmark.color,
+        backgroundColor: hexToRgba(bookmark.color, 0.04),
+      }
+    : {};
+
   return (
     <div
       onClick={handleRowClick}
-      className={`group flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border transition-all duration-150 cursor-pointer ${
-        bookmark.isPinned
+      style={rowStyle}
+      className={`group relative overflow-hidden flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border transition-all duration-150 cursor-pointer ${
+        bookmark.color
+          ? bookmark.isPinned
+            ? 'border-neutral-300 dark:border-neutral-700 ring-1 ring-neutral-400/20'
+            : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
+          : bookmark.isPinned
           ? 'bg-neutral-50/70 dark:bg-neutral-900/80 border-neutral-300 dark:border-neutral-750'
           : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
       }`}
     >
+      {/* Left decorative accent bar if bookmark has color */}
+      {bookmark.color && (
+        <span
+          className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
+          style={{ backgroundColor: bookmark.color }}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Left: Favicon + Title + Notes/Domain */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="w-7 h-7 rounded-md bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-750 flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="flex items-center gap-3 min-w-0 flex-1 pl-1">
+        <div
+          className="w-7 h-7 rounded-md bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-750 flex items-center justify-center shrink-0 overflow-hidden"
+          style={bookmark.color ? { borderColor: hexToRgba(bookmark.color, 0.3) } : undefined}
+        >
           {!faviconError && faviconUrl ? (
             <img
               src={faviconUrl}
@@ -73,6 +98,12 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
+            {bookmark.color && (
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: bookmark.color }}
+              />
+            )}
             <span className="font-medium text-sm text-neutral-900 dark:text-neutral-100 truncate group-hover:text-neutral-700 dark:group-hover:text-neutral-200">
               {bookmark.title}
             </span>
