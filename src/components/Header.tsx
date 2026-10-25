@@ -1,0 +1,168 @@
+import React from 'react';
+import { ViewMode } from '../types';
+import {
+  Bookmark,
+  LayoutGrid,
+  List,
+  Layers,
+  Search,
+  Plus,
+  BarChart3,
+  Moon,
+  Sun,
+  Download,
+  Menu,
+} from 'lucide-react';
+
+interface HeaderProps {
+  viewMode: ViewMode;
+  onChangeViewMode: (mode: ViewMode) => void;
+  onOpenAddModal: () => void;
+  onOpenStatsModal: () => void;
+  onOpenImportExportModal: () => void;
+  onOpenCommandPalette: () => void;
+  onToggleSidebarMobile: () => void;
+  isDark: boolean;
+  onToggleTheme: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({
+  viewMode,
+  onChangeViewMode,
+  onOpenAddModal,
+  onOpenStatsModal,
+  onOpenImportExportModal,
+  onOpenCommandPalette,
+  onToggleSidebarMobile,
+  isDark,
+  onToggleTheme,
+}) => {
+  return (
+    <header className="sticky top-0 z-30 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 md:gap-8">
+      {/* Zone 1: Single element brand wordmark */}
+      <div className="flex items-center gap-2.5 shrink-0">
+        <button
+          type="button"
+          onClick={onToggleSidebarMobile}
+          className="md:hidden p-1.5 -ml-1 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800"
+          title="切换侧边栏"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="flex items-center gap-2 text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100 whitespace-nowrap shrink-0 hover:opacity-90"
+        >
+          <div className="w-7 h-7 rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 flex items-center justify-center shrink-0">
+            <Bookmark className="w-4 h-4 fill-current" />
+          </div>
+          <span>轻藏 BookmarkHub</span>
+        </a>
+      </div>
+
+      {/* Zone 2: Navigation Links / View Switchers (Single line, quiet typography) */}
+      <nav className="hidden md:flex items-center gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-400 shrink-0">
+        <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+          <button
+            type="button"
+            onClick={() => onChangeViewMode('card')}
+            title="卡片视图"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+              viewMode === 'card'
+                ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                : 'hover:text-neutral-900 dark:hover:text-neutral-200'
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>卡片</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeViewMode('list')}
+            title="列表视图"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+              viewMode === 'list'
+                ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                : 'hover:text-neutral-900 dark:hover:text-neutral-200'
+            }`}
+          >
+            <List className="w-3.5 h-3.5" />
+            <span>列表</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeViewMode('group')}
+            title="分类分组视图"
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+              viewMode === 'group'
+                ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                : 'hover:text-neutral-900 dark:hover:text-neutral-200'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>分组</span>
+          </button>
+        </div>
+
+        <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800 mx-2" />
+
+        <button
+          type="button"
+          onClick={onOpenStatsModal}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          <span>统计排行</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenImportExportModal}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>导入导出</span>
+        </button>
+      </nav>
+
+      {/* Zone 3: Search trigger & 1 primary CTA button */}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={onOpenCommandPalette}
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-xs"
+          title="搜索网址与操作 (Ctrl+K)"
+        >
+          <Search className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">搜索...</span>
+          <kbd className="hidden sm:inline-block px-1 text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded">
+            ⌘K
+          </kbd>
+        </button>
+
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+          title={isDark ? '切换明亮模式' : '切换暗黑模式'}
+        >
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={onOpenAddModal}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors whitespace-nowrap shrink-0 shadow-xs"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>添加网址</span>
+        </button>
+      </div>
+    </header>
+  );
+};

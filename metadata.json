@@ -1,0 +1,8 @@
+{
+  "name": "轻藏 BookmarkHub - 纯前端网址收藏管理系统",
+  "description": "轻量高效的纯前端网址收藏管理系统，支持分类标签、多视图切换、实时搜索与点击统计、置顶星标与差异化导入导出。",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
