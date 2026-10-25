@@ -747,6 +747,7 @@ function BookmarkHubApp() {
             setQrBookmark(null);
           }}
           bookmark={qrBookmark}
+          categories={categories}
         />
       </div>
     );
@@ -1215,6 +1216,7 @@ function BookmarkHubApp() {
           setQrBookmark(null);
         }}
         bookmark={qrBookmark}
+        categories={categories}
       />
 
       {/* Modals & Overlays */}
