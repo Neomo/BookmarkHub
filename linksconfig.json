@@ -1,0 +1,532 @@
+{
+  "version": "1.0",
+  "exportedAt": 1793017539497,
+  "source": "BookmarkHub",
+  "type": "full",
+  "settings": {
+    "defaultTheme": "system",
+    "defaultViewMode": "card",
+    "enableDailyPicks": true,
+    "defaultSortOption": "custom",
+    "defaultSubCategoriesView": "expanded",
+    "openInNewTab": true,
+    "autoArchiveMonths": 6
+  },
+  "categories": [
+    {
+      "id": "cat-ai",
+      "name": "人工智能",
+      "icon": "Sparkles",
+      "order": 1,
+      "color": "#6366f1",
+      "parentId": null,
+      "cover": {
+        "type": "gradient",
+        "value": "linear-gradient(135deg, #1e3a8a 0%, #0284c7 50%, #06b6d4 100%)",
+        "textColor": "light"
+      },
+      "subViewOverride": "expanded"
+    },
+    {
+      "id": "cat-ai-chat",
+      "name": "大模型与交互",
+      "icon": "Sparkles",
+      "order": 2,
+      "color": "#6366f1",
+      "parentId": "cat-ai"
+    },
+    {
+      "id": "cat-ai-models",
+      "name": "开源模型社区",
+      "icon": "Cpu",
+      "order": 3,
+      "color": "#6366f1",
+      "parentId": "cat-ai"
+    },
+    {
+      "id": "cat-dev",
+      "name": "开发工具",
+      "icon": "Code",
+      "order": 4,
+      "color": "#0ea5e9",
+      "parentId": null,
+      "cover": {
+        "type": "gradient",
+        "value": "linear-gradient(135deg, #1e293b 0%, #334155 50%, #0ea5e9 100%)",
+        "textColor": "light"
+      },
+      "subViewOverride": "expanded"
+    },
+    {
+      "id": "cat-dev-repo",
+      "name": "代码托管协作",
+      "icon": "Code",
+      "order": 5,
+      "color": "#0ea5e9",
+      "parentId": "cat-dev"
+    },
+    {
+      "id": "cat-dev-frontend",
+      "name": "前端与框架",
+      "icon": "Layers",
+      "order": 6,
+      "color": "#0ea5e9",
+      "parentId": "cat-dev"
+    },
+    {
+      "id": "cat-dev-docs",
+      "name": "技术离线文档",
+      "icon": "Terminal",
+      "order": 7,
+      "color": "#0ea5e9",
+      "parentId": "cat-dev"
+    },
+    {
+      "id": "cat-design",
+      "name": "设计资源",
+      "icon": "Palette",
+      "order": 8,
+      "color": "#ec4899",
+      "parentId": null,
+      "cover": {
+        "type": "gradient",
+        "value": "linear-gradient(135deg, #ea580c 0%, #db2777 50%, #7c3aed 100%)",
+        "textColor": "light"
+      },
+      "subViewOverride": "expanded"
+    },
+    {
+      "id": "cat-design-ui",
+      "name": "界面与原型协同",
+      "icon": "Palette",
+      "order": 9,
+      "color": "#ec4899",
+      "parentId": "cat-design"
+    },
+    {
+      "id": "cat-design-inspire",
+      "name": "创意灵感社区",
+      "icon": "Compass",
+      "order": 10,
+      "color": "#ec4899",
+      "parentId": "cat-design"
+    },
+    {
+      "id": "cat-read",
+      "name": "资讯阅读",
+      "icon": "BookOpen",
+      "order": 11,
+      "color": "#f59e0b",
+      "parentId": null,
+      "cover": {
+        "type": "gradient",
+        "value": "linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)",
+        "textColor": "light"
+      },
+      "subViewOverride": "expanded"
+    },
+    {
+      "id": "cat-read-tech",
+      "name": "开发者技术社区",
+      "icon": "Globe",
+      "order": 12,
+      "color": "#f59e0b",
+      "parentId": "cat-read"
+    },
+    {
+      "id": "cat-read-news",
+      "name": "极客与数字生活",
+      "icon": "BookOpen",
+      "order": 13,
+      "color": "#f59e0b",
+      "parentId": "cat-read"
+    },
+    {
+      "id": "cat-work",
+      "name": "高效办公",
+      "icon": "Zap",
+      "order": 14,
+      "color": "#10b981",
+      "parentId": null,
+      "cover": {
+        "type": "gradient",
+        "value": "linear-gradient(135deg, #065f46 0%, #059669 50%, #10b981 100%)",
+        "textColor": "light"
+      },
+      "subViewOverride": "expanded"
+    },
+    {
+      "id": "cat-work-collab",
+      "name": "协同项目管理",
+      "icon": "Zap",
+      "order": 15,
+      "color": "#10b981",
+      "parentId": "cat-work"
+    },
+    {
+      "id": "cat-work-whiteboard",
+      "name": "白板与思维工具",
+      "icon": "Coffee",
+      "order": 16,
+      "color": "#10b981",
+      "parentId": "cat-work"
+    }
+  ],
+  "bookmarks": [
+    {
+      "id": "bm-1",
+      "title": "Google AI Studio",
+      "url": "https://aistudio.google.com",
+      "categoryId": "cat-ai-chat",
+      "tags": [
+        "AI",
+        "Gemini",
+        "API",
+        "开发"
+      ],
+      "notes": "Google 最新模型体验与原型开发平台，支持 Gemini 2.5/3.0 系列 API",
+      "isPinned": true,
+      "isStarred": true,
+      "clickCount": 42,
+      "lastClickedAt": 1793016639496,
+      "createdAt": 1790425539496,
+      "updatedAt": 1790425539496,
+      "order": 1,
+      "color": "#3b82f6"
+    },
+    {
+      "id": "bm-2",
+      "title": "GitHub",
+      "url": "https://github.com",
+      "categoryId": "cat-dev-repo",
+      "tags": [
+        "代码托管",
+        "开源",
+        "Git"
+      ],
+      "notes": "全球领先的软件开发与开源协作社区",
+      "isPinned": true,
+      "isStarred": true,
+      "clickCount": 88,
+      "lastClickedAt": 1793014839496,
+      "createdAt": 1789561539496,
+      "updatedAt": 1789561539496,
+      "order": 2
+    },
+    {
+      "id": "bm-3",
+      "title": "Hugging Face",
+      "url": "https://huggingface.co",
+      "categoryId": "cat-ai-models",
+      "tags": [
+        "AI",
+        "模型",
+        "开源",
+        "机器学习"
+      ],
+      "notes": "开源机器学习平台与模型社区",
+      "isPinned": false,
+      "isStarred": true,
+      "clickCount": 26,
+      "lastClickedAt": 1792844739496,
+      "createdAt": 1790857539496,
+      "updatedAt": 1790857539496,
+      "order": 3,
+      "color": "#f59e0b"
+    },
+    {
+      "id": "bm-4",
+      "title": "Tailwind CSS",
+      "url": "https://tailwindcss.com",
+      "categoryId": "cat-dev-frontend",
+      "tags": [
+        "CSS",
+        "前端",
+        "样式库"
+      ],
+      "notes": "高度可定制、效能优先的现代 CSS 框架",
+      "isPinned": false,
+      "isStarred": true,
+      "clickCount": 35,
+      "lastClickedAt": 1792931139496,
+      "createdAt": 1790598339496,
+      "updatedAt": 1790598339496,
+      "order": 4,
+      "color": "#06b6d4"
+    },
+    {
+      "id": "bm-5",
+      "title": "Figma",
+      "url": "https://www.figma.com",
+      "categoryId": "cat-design-ui",
+      "tags": [
+        "UI设计",
+        "协作",
+        "原型"
+      ],
+      "notes": "基于浏览器的现代协同界面设计工具",
+      "isPinned": true,
+      "isStarred": true,
+      "clickCount": 64,
+      "lastClickedAt": 1793006739496,
+      "createdAt": 1789993539496,
+      "updatedAt": 1789993539496,
+      "order": 5,
+      "color": "#ec4899"
+    },
+    {
+      "id": "bm-6",
+      "title": "Dribbble",
+      "url": "https://dribbble.com",
+      "categoryId": "cat-design-inspire",
+      "tags": [
+        "灵感",
+        "设计",
+        "插画"
+      ],
+      "notes": "全球顶尖设计师与创意工作者的作品展示社区",
+      "isPinned": false,
+      "isStarred": false,
+      "clickCount": 19,
+      "lastClickedAt": 1792671939496,
+      "createdAt": 1791289539496,
+      "updatedAt": 1791289539496,
+      "order": 6,
+      "color": "#8b5cf6"
+    },
+    {
+      "id": "bm-7",
+      "title": "V2EX",
+      "url": "https://v2ex.com",
+      "categoryId": "cat-read-tech",
+      "tags": [
+        "社区",
+        "技术",
+        "讨论"
+      ],
+      "notes": "创意工作者讨论技术、数码与生活的社区",
+      "isPinned": false,
+      "isStarred": true,
+      "clickCount": 51,
+      "lastClickedAt": 1792999539496,
+      "createdAt": 1790252739496,
+      "updatedAt": 1790252739496,
+      "order": 7
+    },
+    {
+      "id": "bm-8",
+      "title": "Hacker News",
+      "url": "https://news.ycombinator.com",
+      "categoryId": "cat-read-news",
+      "tags": [
+        "资讯",
+        "极客",
+        "硅谷",
+        "创业"
+      ],
+      "notes": "Y Combinator 旗下的高质量科技热点讨论榜单",
+      "isPinned": false,
+      "isStarred": false,
+      "clickCount": 38,
+      "lastClickedAt": 1792974339496,
+      "createdAt": 1790425539496,
+      "updatedAt": 1790425539496,
+      "order": 8
+    },
+    {
+      "id": "bm-9",
+      "title": "少数派 sspai",
+      "url": "https://sspai.com",
+      "categoryId": "cat-read-news",
+      "tags": [
+        "效率",
+        "数码",
+        "测评",
+        "生活"
+      ],
+      "notes": "高质量数字生活指南与效率工具探讨平台",
+      "isPinned": false,
+      "isStarred": true,
+      "clickCount": 29,
+      "lastClickedAt": 1792931139496,
+      "createdAt": 1791462339496,
+      "updatedAt": 1791462339496,
+      "order": 9
+    },
+    {
+      "id": "bm-10",
+      "title": "Notion",
+      "url": "https://notion.so",
+      "categoryId": "cat-work-collab",
+      "tags": [
+        "笔记",
+        "知识库",
+        "项目管理"
+      ],
+      "notes": "一体化工作空间，融合笔记、任务看板与数据库",
+      "isPinned": true,
+      "isStarred": true,
+      "clickCount": 73,
+      "lastClickedAt": 1793010339496,
+      "createdAt": 1789129539496,
+      "updatedAt": 1789129539496,
+      "order": 10
+    },
+    {
+      "id": "bm-11",
+      "title": "Linear",
+      "url": "https://linear.app",
+      "categoryId": "cat-work-collab",
+      "tags": [
+        "项目管理",
+        "Issue",
+        "敏捷"
+      ],
+      "notes": "专为高性能技术团队打造的极速项目跟踪系统",
+      "isPinned": false,
+      "isStarred": false,
+      "clickCount": 22,
+      "lastClickedAt": 1792758339496,
+      "createdAt": 1791807939496,
+      "updatedAt": 1791807939496,
+      "order": 11
+    },
+    {
+      "id": "bm-12",
+      "title": "DevDocs",
+      "url": "https://devdocs.io",
+      "categoryId": "cat-dev-docs",
+      "tags": [
+        "文档",
+        "查阅",
+        "前端",
+        "后端"
+      ],
+      "notes": "集合所有主流编程语言和框架的快速离线文档库",
+      "isPinned": false,
+      "isStarred": true,
+      "clickCount": 31,
+      "lastClickedAt": 1792952739496,
+      "createdAt": 1791116739496,
+      "updatedAt": 1791116739496,
+      "order": 12
+    },
+    {
+      "id": "bm-13",
+      "title": "Excalidraw",
+      "url": "https://excalidraw.com",
+      "categoryId": "cat-work-whiteboard",
+      "tags": [
+        "白板",
+        "手绘",
+        "架构图",
+        "工具"
+      ],
+      "notes": "虚拟手绘风格白板，极简轻便且支持多人实时协同",
+      "isPinned": false,
+      "isStarred": false,
+      "clickCount": 15,
+      "lastClickedAt": 1792585539496,
+      "createdAt": 1791980739496,
+      "updatedAt": 1791980739496,
+      "order": 13
+    },
+    {
+      "id": "bm-14",
+      "title": "Iconify",
+      "url": "https://iconify.design",
+      "categoryId": "cat-design-ui",
+      "tags": [
+        "图标",
+        "SVG",
+        "资源"
+      ],
+      "notes": "统一图标框架，收录超过 200,000 个开源矢量图标",
+      "isPinned": false,
+      "isStarred": false,
+      "clickCount": 18,
+      "lastClickedAt": 1792499139496,
+      "createdAt": 1792153539496,
+      "updatedAt": 1792153539496,
+      "order": 14
+    },
+    {
+      "id": "bm-15",
+      "title": "MDN Web Docs",
+      "url": "https://developer.mozilla.org",
+      "categoryId": "cat-dev-docs",
+      "tags": [
+        "Web",
+        "JavaScript",
+        "HTML",
+        "学习"
+      ],
+      "notes": "面向 Web 开发者的权威开放技术文档，包含 HTML5、CSS 与现代 JS 参考",
+      "isPinned": false,
+      "isStarred": true,
+      "clickCount": 0,
+      "lastClickedAt": null,
+      "createdAt": 1791721539496,
+      "updatedAt": 1791721539496,
+      "order": 15
+    },
+    {
+      "id": "bm-16",
+      "title": "Can I use",
+      "url": "https://caniuse.com",
+      "categoryId": "cat-dev-frontend",
+      "tags": [
+        "前端",
+        "浏览器兼容性",
+        "HTML5",
+        "CSS3"
+      ],
+      "notes": "现代浏览器对前端技术标准支持度速查表，开发必备",
+      "isPinned": false,
+      "isStarred": false,
+      "clickCount": 0,
+      "lastClickedAt": null,
+      "createdAt": 1792326339496,
+      "updatedAt": 1792326339496,
+      "order": 16
+    },
+    {
+      "id": "bm-17",
+      "title": "CSS Tricks (经典技术归档)",
+      "url": "https://css-tricks.com",
+      "categoryId": "cat-dev-frontend",
+      "tags": [
+        "CSS",
+        "前端",
+        "技巧"
+      ],
+      "notes": "早期经典前端 CSS 教程，超过 6 个月（200 天）未曾翻阅",
+      "isPinned": false,
+      "isStarred": false,
+      "clickCount": 2,
+      "lastClickedAt": 1775737539496,
+      "createdAt": 1774009539496,
+      "updatedAt": 1775737539496,
+      "order": 17
+    },
+    {
+      "id": "bm-18",
+      "title": "Sublime Text 官网",
+      "url": "https://www.sublimetext.com",
+      "categoryId": "cat-dev-repo",
+      "tags": [
+        "编辑器",
+        "轻量",
+        "代码"
+      ],
+      "notes": "历史收藏的极速代码文本编辑器，长达 230 天未曾点击",
+      "isPinned": false,
+      "isStarred": false,
+      "clickCount": 0,
+      "lastClickedAt": null,
+      "createdAt": 1773145539496,
+      "updatedAt": 1773145539496,
+      "order": 18
+    }
+  ]
+}

@@ -515,6 +515,17 @@ export function loadCategories(): Category[] {
   }
 }
 
+export function hasLocalSavedBookmarks(): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 export function saveCategories(categories: Category[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
@@ -527,7 +538,6 @@ export function loadBookmarks(): Bookmark[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.BOOKMARKS);
     if (!raw) {
-      saveBookmarks(DEFAULT_BOOKMARKS);
       return DEFAULT_BOOKMARKS;
     }
     const parsed = JSON.parse(raw);
@@ -547,6 +557,96 @@ export function saveBookmarks(bookmarks: Bookmark[]): void {
   } catch (e) {
     console.error('Failed to save bookmarks to localStorage:', e);
   }
+}
+
+export interface InitialDataResult {
+  bookmarks: Bookmark[];
+  categories: Category[];
+  settings?: SystemSettings;
+  source: 'local' | 'linksconfig' | 'builtin';
+}
+
+/**
+ * Loads system bookmarks and categories on startup:
+ * 1. If local storage already has bookmarks saved and updated, use local saved data.
+ * 2. If first time opening and no local data found:
+ *    - Try loading from linksconfig.json in the system directory.
+ *    - If linksconfig.json is missing or format is invalid, fall back to built-in demo data.
+ * 3. Save the loaded data to localStorage for future sessions.
+ */
+export async function loadInitialSystemData(): Promise<InitialDataResult> {
+  // If local storage already has bookmarks saved, respect the user's updated local data
+  if (hasLocalSavedBookmarks()) {
+    return {
+      bookmarks: loadBookmarks(),
+      categories: loadCategories(),
+      source: 'local',
+    };
+  }
+
+  // First time open & no local data detected!
+  // 1. Try loading from linksconfig.json in the system directory
+  try {
+    const response = await fetch('/linksconfig.json', { cache: 'no-cache' });
+    if (response.ok) {
+      const rawText = await response.text();
+      const validation = validateAndParseBackupFile(rawText);
+      if (validation.isValid && validation.parsedData) {
+        let loadedBookmarks: Bookmark[] = [];
+        let loadedCategories: Category[] = DEFAULT_CATEGORIES;
+        let loadedSettings: SystemSettings | undefined = undefined;
+
+        if (validation.type === 'full') {
+          loadedBookmarks = Array.isArray(validation.parsedData.bookmarks)
+            ? validation.parsedData.bookmarks
+            : [];
+          if (
+            Array.isArray(validation.parsedData.categories) &&
+            validation.parsedData.categories.length > 0
+          ) {
+            loadedCategories = validation.parsedData.categories;
+          }
+          loadedSettings = validation.parsedData.settings;
+        } else if (validation.type === 'bookmarks') {
+          loadedBookmarks = Array.isArray(validation.parsedData.bookmarks)
+            ? validation.parsedData.bookmarks
+            : [];
+          if (
+            Array.isArray(validation.parsedData.categories) &&
+            validation.parsedData.categories.length > 0
+          ) {
+            loadedCategories = validation.parsedData.categories;
+          }
+        }
+
+        if (loadedBookmarks.length > 0) {
+          // Synchronize to localStorage
+          saveBookmarks(loadedBookmarks);
+          saveCategories(loadedCategories);
+          if (loadedSettings) {
+            saveSystemSettings(loadedSettings);
+          }
+          return {
+            bookmarks: loadedBookmarks,
+            categories: loadedCategories,
+            settings: loadedSettings,
+            source: 'linksconfig',
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load linksconfig.json, falling back to built-in demo data:', err);
+  }
+
+  // 2. If linksconfig.json not found or format invalid, fall back to built-in demo data
+  saveBookmarks(DEFAULT_BOOKMARKS);
+  saveCategories(DEFAULT_CATEGORIES);
+  return {
+    bookmarks: DEFAULT_BOOKMARKS,
+    categories: DEFAULT_CATEGORIES,
+    source: 'builtin',
+  };
 }
 
 export function exportDataAsJSON(bookmarks: Bookmark[], categories: Category[]): void {

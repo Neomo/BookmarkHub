@@ -95,6 +95,13 @@ export const BackupRestoreManager: React.FC<BackupRestoreManagerProps> = ({
     showToast('已成功创建全量备份包（网址+分类+配置）', 'success');
   };
 
+  // Export directly as linksconfig.json for initial system deployment
+  const handleExportLinksConfig = () => {
+    const jsonStr = exportFullBackupJson(bookmarks, categories, settings);
+    downloadJsonFile(jsonStr, 'linksconfig.json');
+    showToast('已导出 linksconfig.json，可放入系统目录用于无缓存初始化', 'success');
+  };
+
   // Handle file select
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -273,14 +280,24 @@ export const BackupRestoreManager: React.FC<BackupRestoreManagerProps> = ({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={handleExportFull}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-xl bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-xs"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>一键下载全量备份</span>
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleExportFull}
+                className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium rounded-xl bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>一键下载全量备份</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleExportLinksConfig}
+                className="w-full flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-medium rounded-lg border border-neutral-300 dark:border-neutral-700 hover:bg-white dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+                title="导出为 linksconfig.json，放入系统根目录可实现新客户端/服务器开箱即用"
+              >
+                <span>导出为 linksconfig.json 部署文件</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

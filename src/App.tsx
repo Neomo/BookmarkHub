@@ -34,6 +34,7 @@ import {
   loadSystemSettings,
   saveSystemSettings,
   DEFAULT_SYSTEM_SETTINGS,
+  loadInitialSystemData,
 } from './utils/storage';
 import { matchBookmark } from './utils/pinyin';
 import { extractDomain, getFaviconUrl } from './utils/url';
@@ -180,45 +181,79 @@ function BookmarkHubApp() {
     }
   };
 
-  // Load from local storage on mount & check auto-archive for bookmarks with no clicks in last 6 months
+  // Load initial data on mount:
+  // 1. If local storage already has saved data, uses local updated data.
+  // 2. If first time open (no local data), loads from linksconfig.json in system directory.
+  // 3. If linksconfig.json is missing or invalid, loads built-in demo data.
   useEffect(() => {
-    const loadedCats = loadCategories();
-    const loadedBms = loadBookmarks();
-    const loadedSettings = loadSystemSettings();
-    setSystemSettings(loadedSettings);
+    let isMounted = true;
 
-    const autoArchive = localStorage.getItem('bookmarkhub_auto_archive_enabled') !== 'false';
-    if (autoArchive) {
-      const archiveResult = archiveInactiveBookmarks(loadedBms, loadedCats);
-      if (archiveResult.archivedCount > 0) {
-        setCategories(archiveResult.updatedCategories);
-        setBookmarks(archiveResult.updatedBookmarks);
-        saveCategories(archiveResult.updatedCategories);
-        saveBookmarks(archiveResult.updatedBookmarks);
-        setTimeout(() => {
-          showToast(
-            `智能整理：已自动将 ${archiveResult.archivedCount} 个超 6 个月未访问的书签移入「已归档」分类`,
-            'info'
-          );
-        }, 600);
+    async function init() {
+      const initialData = await loadInitialSystemData();
+      if (!isMounted) return;
+
+      let currentCats = initialData.categories;
+      let currentBms = initialData.bookmarks;
+
+      // Settings: check if linksconfig provided custom settings
+      let loadedSettings = loadSystemSettings();
+      if (initialData.settings) {
+        loadedSettings = {
+          ...loadedSettings,
+          ...initialData.settings,
+        };
+        setSystemSettings(loadedSettings);
+        saveSystemSettings(loadedSettings);
       } else {
-        setCategories(loadedCats);
-        setBookmarks(loadedBms);
+        setSystemSettings(loadedSettings);
       }
-    } else {
-      setCategories(loadedCats);
-      setBookmarks(loadedBms);
+
+      // Check auto-archive for bookmarks with no clicks in last 6 months
+      const autoArchive = localStorage.getItem('bookmarkhub_auto_archive_enabled') !== 'false';
+      if (autoArchive) {
+        const archiveResult = archiveInactiveBookmarks(currentBms, currentCats);
+        if (archiveResult.archivedCount > 0) {
+          setCategories(archiveResult.updatedCategories);
+          setBookmarks(archiveResult.updatedBookmarks);
+          saveCategories(archiveResult.updatedCategories);
+          saveBookmarks(archiveResult.updatedBookmarks);
+          setTimeout(() => {
+            showToast(
+              `智能整理：已自动将 ${archiveResult.archivedCount} 个超 6 个月未访问的书签移入「已归档」分类`,
+              'info'
+            );
+          }, 600);
+        } else {
+          setCategories(currentCats);
+          setBookmarks(currentBms);
+        }
+      } else {
+        setCategories(currentCats);
+        setBookmarks(currentBms);
+      }
+
+      const savedView = localStorage.getItem('bookmarkhub_view_mode') as ViewMode | null;
+      if (savedView && ['card', 'list', 'group'].includes(savedView)) {
+        setViewMode(savedView);
+      } else if (loadedSettings.defaultViewMode) {
+        setViewMode(loadedSettings.defaultViewMode);
+      }
+
+      applyThemeMode(loadedSettings.defaultTheme);
+      setIsLoaded(true);
+
+      if (initialData.source === 'linksconfig') {
+        setTimeout(() => {
+          showToast(`已从 linksconfig.json 成功初始化 ${currentBms.length} 条网址数据`, 'success');
+        }, 400);
+      }
     }
 
-    const savedView = localStorage.getItem('bookmarkhub_view_mode') as ViewMode | null;
-    if (savedView && ['card', 'list', 'group'].includes(savedView)) {
-      setViewMode(savedView);
-    } else if (loadedSettings.defaultViewMode) {
-      setViewMode(loadedSettings.defaultViewMode);
-    }
+    init();
 
-    applyThemeMode(loadedSettings.defaultTheme);
-    setIsLoaded(true);
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Listen to system dark mode preference changes if mode is 'system'

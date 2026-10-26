@@ -351,10 +351,12 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
 
     try {
       // Use html-to-image to capture the exact styled ticket
+      // skipFonts: true avoids cross-origin cssRules SecurityError on remote Google Fonts stylesheets
       const dataUrl = await toPng(ticketRef.current, {
         cacheBust: true,
         pixelRatio: 2.5,
         quality: 1,
+        skipFonts: true,
         filter: (node) => {
           // Exclude any temporary ignore elements if needed
           return !node.classList?.contains('no-export');
