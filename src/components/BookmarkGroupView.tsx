@@ -29,6 +29,7 @@ interface BookmarkGroupViewProps {
   onSelectTag?: (tag: string) => void;
   onShowQrCode?: (bookmark: Bookmark) => void;
   globalDefaultSubView?: 'expanded' | 'collapsed';
+  showOgImage?: boolean;
 }
 
 // Droppable subcategory tab for horizontal filter row
@@ -201,6 +202,7 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
   onSelectTag,
   onShowQrCode,
   globalDefaultSubView = 'expanded',
+  showOgImage = true,
 }) => {
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [collapsedSubcategoryBars, setCollapsedSubcategoryBars] = useState<Record<string, boolean>>({});
@@ -415,6 +417,7 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
                           onRecordClick={onRecordClick}
                           onSelectTag={onSelectTag}
                           onShowQrCode={onShowQrCode}
+                          showOgImage={showOgImage}
                         />
                       ))}
                     </div>
@@ -468,6 +471,7 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
                   onRecordClick={onRecordClick}
                   onSelectTag={onSelectTag}
                   onShowQrCode={onShowQrCode}
+                  showOgImage={showOgImage}
                 />
               ))}
             </div>

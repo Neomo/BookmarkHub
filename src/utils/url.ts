@@ -125,6 +125,45 @@ export async function fetchWebpageTitle(url: string): Promise<{ title: string; s
   };
 }
 
+/**
+ * Fetch webpage OpenGraph metadata (og:image, title, description)
+ */
+export async function fetchWebpageOgData(url: string): Promise<{
+  title?: string;
+  ogImage?: string;
+  description?: string;
+}> {
+  let targetUrl = url.trim();
+  if (!/^https?:\/\//i.test(targetUrl)) {
+    targetUrl = `https://${targetUrl}`;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    // Fetch OpenGraph metadata via microlink API
+    const apiUrl = `https://api.microlink.io?url=${encodeURIComponent(targetUrl)}`;
+    const res = await fetch(apiUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json && json.status === 'success' && json.data) {
+        return {
+          title: json.data.title,
+          ogImage: json.data.image?.url || json.data.logo?.url,
+          description: json.data.description,
+        };
+      }
+    }
+  } catch {
+    // Graceful fallback
+  }
+
+  return {};
+}
+
 export interface ParsedBatchItem {
   title: string;
   url: string;

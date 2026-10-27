@@ -5,6 +5,7 @@ import {
   ImportDiff,
   ImportMode,
   SystemSettings,
+  CustomShortcuts,
   SystemConfigBackup,
   FullBackupData,
 } from '../types';
@@ -130,6 +131,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     updatedAt: now - 30 * day,
     order: 1,
     color: '#3b82f6',
+    coverImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'bm-2',
@@ -145,6 +147,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     createdAt: now - 40 * day,
     updatedAt: now - 40 * day,
     order: 2,
+    coverImage: 'https://images.unsplash.com/photo-1618401471353-b98aedd04e11?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'bm-3',
@@ -177,6 +180,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     updatedAt: now - 28 * day,
     order: 4,
     color: '#06b6d4',
+    coverImage: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'bm-5',
@@ -193,6 +197,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     updatedAt: now - 35 * day,
     order: 5,
     color: '#ec4899',
+    coverImage: 'https://images.unsplash.com/photo-1581291518655-9523c932ecae?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'bm-6',
@@ -209,6 +214,7 @@ export const DEFAULT_BOOKMARKS: Bookmark[] = [
     updatedAt: now - 20 * day,
     order: 6,
     color: '#8b5cf6',
+    coverImage: 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=800&q=80',
   },
   {
     id: 'bm-7',
@@ -1015,6 +1021,14 @@ export function archiveInactiveBookmarks(
 // System Settings Persistence
 // ==========================================
 
+export const DEFAULT_CUSTOM_SHORTCUTS: CustomShortcuts = {
+  search: 'k',
+  newBookmark: 'n',
+  toggleTheme: 't',
+  openAdmin: 'm',
+  toggleView: 'v',
+};
+
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   defaultTheme: 'system',
   defaultViewMode: 'card',
@@ -1023,6 +1037,8 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   defaultSubCategoriesView: 'expanded',
   openInNewTab: true,
   autoArchiveMonths: 6,
+  customShortcuts: DEFAULT_CUSTOM_SHORTCUTS,
+  showCardOgImage: true,
 };
 
 export function loadSystemSettings(): SystemSettings {
@@ -1033,6 +1049,14 @@ export function loadSystemSettings(): SystemSettings {
       return {
         ...DEFAULT_SYSTEM_SETTINGS,
         ...parsed,
+        showCardOgImage:
+          parsed.showCardOgImage !== undefined
+            ? Boolean(parsed.showCardOgImage)
+            : DEFAULT_SYSTEM_SETTINGS.showCardOgImage,
+        customShortcuts: {
+          ...DEFAULT_CUSTOM_SHORTCUTS,
+          ...(parsed.customShortcuts || {}),
+        },
       };
     }
   } catch (e) {

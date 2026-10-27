@@ -12,8 +12,11 @@ export interface Bookmark {
   createdAt: number;
   updatedAt: number;
   order: number;
-  healthStatus?: 'unknown' | 'healthy' | 'error' | 'checking';
+  healthStatus?: 'unknown' | 'healthy' | 'warning' | 'error' | 'checking';
+  lastHealthCheckedAt?: number;
   color?: string;
+  coverImage?: string;
+  ogImage?: string;
 }
 
 export type CategoryCoverType = 'solid' | 'gradient' | 'image';
@@ -67,6 +70,14 @@ export interface ExportData {
   bookmarks: Bookmark[];
 }
 
+export interface CustomShortcuts {
+  search: string;      // default: 'k'
+  newBookmark: string; // default: 'n'
+  toggleTheme: string; // default: 't'
+  openAdmin: string;   // default: 'm'
+  toggleView: string;  // default: 'v'
+}
+
 export interface SystemSettings {
   defaultTheme: ThemeMode;
   defaultViewMode: ViewMode;
@@ -75,6 +86,8 @@ export interface SystemSettings {
   defaultSubCategoriesView: 'expanded' | 'collapsed';
   openInNewTab: boolean;
   autoArchiveMonths: number;
+  customShortcuts?: CustomShortcuts;
+  showCardOgImage?: boolean;
 }
 
 export interface SystemConfigBackup {

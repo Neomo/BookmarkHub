@@ -54,6 +54,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { QrCodeModal } from './components/QrCodeModal';
 import { MobileNav } from './components/MobileNav';
 import { AdminDashboard, AdminTab } from './components/admin/AdminDashboard';
+import { FloatingKeyboardShortcuts } from './components/FloatingKeyboardShortcuts';
 import { ToastProvider, useToast } from './components/Toast';
 import {
   Search,
@@ -281,21 +282,80 @@ function BookmarkHubApp() {
     }
   }, [isDark]);
 
-  // Global keyboard shortcuts (Ctrl+K, Cmd+K, Ctrl+N, Cmd+N)
+  // Global keyboard shortcuts (customizable with fallback defaults)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      // Don't intercept typing in inputs or textareas unless it is Escape or modified with Ctrl/Cmd
+      const target = e.target as HTMLElement;
+      const isInput =
+        target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+      if (e.key === 'Escape') {
+        if (isAddEditOpen) setIsAddEditOpen(false);
+        else if (isBatchAddOpen) setIsBatchAddOpen(false);
+        else if (isCategoryModalOpen) setIsCategoryModalOpen(false);
+        else if (isStatsModalOpen) setIsStatsModalOpen(false);
+        else if (isImportExportOpen) setIsImportExportOpen(false);
+        else if (isArchiveModalOpen) setIsArchiveModalOpen(false);
+        else if (isAdminOpen) setIsAdminOpen(false);
+        else if (isQrModalOpen) setIsQrModalOpen(false);
+        else if (isCommandPaletteOpen) setIsCommandPaletteOpen(false);
+        else if (searchQuery) setSearchQuery('');
+        return;
+      }
+
+      if (isInput && !e.ctrlKey && !e.metaKey) return;
+
+      const sc = systemSettings.customShortcuts || {
+        search: 'k',
+        newBookmark: 'n',
+        toggleTheme: 't',
+        openAdmin: 'm',
+        toggleView: 'v',
+      };
+
+      const hasModifier = e.metaKey || e.ctrlKey;
+      const pressedKey = e.key.toLowerCase();
+
+      if (hasModifier && pressedKey === (sc.search || 'k').toLowerCase()) {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n') {
+      } else if (hasModifier && pressedKey === (sc.newBookmark || 'n').toLowerCase()) {
         e.preventDefault();
         setBookmarkToEdit(null);
         setIsAddEditOpen(true);
+      } else if (hasModifier && pressedKey === (sc.toggleTheme || 't').toLowerCase()) {
+        e.preventDefault();
+        handleToggleTheme();
+      } else if (hasModifier && pressedKey === (sc.openAdmin || 'm').toLowerCase()) {
+        e.preventDefault();
+        setIsAdminOpen((prev) => !prev);
+      } else if (hasModifier && pressedKey === (sc.toggleView || 'v').toLowerCase()) {
+        e.preventDefault();
+        setViewMode((current) => {
+          const nextMode: ViewMode =
+            current === 'card' ? 'list' : current === 'list' ? 'group' : 'card';
+          localStorage.setItem('bookmarkhub_view_mode', nextMode);
+          return nextMode;
+        });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [
+    systemSettings.customShortcuts,
+    isAddEditOpen,
+    isBatchAddOpen,
+    isCategoryModalOpen,
+    isStatsModalOpen,
+    isImportExportOpen,
+    isArchiveModalOpen,
+    isAdminOpen,
+    isQrModalOpen,
+    isCommandPaletteOpen,
+    searchQuery,
+    isDark,
+  ]);
 
   // Save changes to localStorage
   const updateBookmarks = (newBookmarks: Bookmark[]) => {
@@ -1066,7 +1126,10 @@ function BookmarkHubApp() {
             )}
 
             {/* Bookmarks Render Area */}
-            <div className="flex-1">
+            <div
+              key={`${activeCategoryId || 'all'}-${selectedTag || 'all'}-${showOnlyStarred}-${showOnlyPinned}-${searchQuery}`}
+              className="flex-1 transition-all duration-200 animate-in fade-in-50 slide-in-from-bottom-1"
+            >
               {filteredAndSortedBookmarks.length > 0 ? (
                 <>
                   {/* 1. Card View with dnd-kit Drag-and-Drop Sorting */}
@@ -1091,6 +1154,7 @@ function BookmarkHubApp() {
                             onRecordClick={handleRecordClick}
                             onSelectTag={(tag) => setSelectedTag(tag)}
                             onShowQrCode={handleShowQrCode}
+                            showOgImage={systemSettings.showCardOgImage ?? true}
                           />
                         ))}
                       </div>
@@ -1138,6 +1202,7 @@ function BookmarkHubApp() {
                       onSelectTag={(tag) => setSelectedTag(tag)}
                       onShowQrCode={handleShowQrCode}
                       globalDefaultSubView={systemSettings.defaultSubCategoriesView}
+                      showOgImage={systemSettings.showCardOgImage ?? true}
                     />
                   )}
                 </>
@@ -1289,6 +1354,11 @@ function BookmarkHubApp() {
         bookmarks={bookmarks}
         categories={categories}
         onRecordClick={handleRecordClick}
+        onUpdateBookmarks={updateBookmarks}
+        onEditBookmark={(bm) => {
+          setBookmarkToEdit(bm);
+          setIsAddEditOpen(true);
+        }}
       />
 
       <ImportExportModal
@@ -1335,6 +1405,12 @@ function BookmarkHubApp() {
         onRestoreBookmarks={handleRestoreBookmarks}
         autoArchiveEnabled={autoArchiveEnabled}
         onToggleAutoArchive={handleToggleAutoArchive}
+      />
+
+      {/* Floating Keyboard Shortcuts Helper Indicator */}
+      <FloatingKeyboardShortcuts
+        shortcuts={systemSettings.customShortcuts}
+        onOpenSettings={() => handleOpenAdmin('settings')}
       />
     </div>
   );

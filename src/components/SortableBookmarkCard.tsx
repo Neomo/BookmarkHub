@@ -15,6 +15,7 @@ interface SortableBookmarkCardProps {
   onSelectTag?: (tag: string) => void;
   onShowQrCode?: (bookmark: Bookmark) => void;
   isDragDisabled?: boolean;
+  showOgImage?: boolean;
 }
 
 export const SortableBookmarkCard: React.FC<SortableBookmarkCardProps> = ({
@@ -28,6 +29,7 @@ export const SortableBookmarkCard: React.FC<SortableBookmarkCardProps> = ({
   onSelectTag,
   onShowQrCode,
   isDragDisabled = false,
+  showOgImage = true,
 }) => {
   const {
     attributes,
@@ -61,6 +63,7 @@ export const SortableBookmarkCard: React.FC<SortableBookmarkCardProps> = ({
         onShowQrCode={onShowQrCode}
         dragHandleProps={isDragDisabled ? undefined : { ...attributes, ...listeners }}
         isDragging={isDragging}
+        showOgImage={showOgImage}
       />
     </div>
   );

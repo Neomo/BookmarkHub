@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { Bookmark, Category } from '../types';
-import { extractDomain, getFaviconUrl, formatRelativeTime } from '../utils/url';
+import { extractDomain, getFaviconUrl } from '../utils/url';
 import { hexToRgba } from '../utils/color';
-import { Pin, Star, Globe, Copy, Edit2, Trash2, ExternalLink, QrCode } from 'lucide-react';
+import { Pin, Star, Globe, Copy, Edit2, Trash2, ExternalLink, QrCode, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { useToast } from './Toast';
+import { getLastVisitedDisplay } from './BookmarkCard';
 
 interface BookmarkListRowProps {
   bookmark: Bookmark;
@@ -33,6 +35,7 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
 
   const domain = extractDomain(bookmark.url);
   const faviconUrl = getFaviconUrl(bookmark.url);
+  const lastVisit = getLastVisitedDisplay(bookmark.lastClickedAt);
 
   const handleRowClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -55,7 +58,8 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
     : {};
 
   return (
-    <div
+    <motion.div
+      whileTap={{ scale: 0.995 }}
       onClick={handleRowClick}
       style={rowStyle}
       className={`group relative overflow-hidden flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-lg border transition-all duration-150 cursor-pointer ${
@@ -111,6 +115,44 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
             <span className="text-xs text-neutral-400 dark:text-neutral-500 font-mono truncate hidden sm:inline">
               {domain}
             </span>
+
+            {/* Health status badge */}
+            {bookmark.healthStatus && bookmark.healthStatus !== 'unknown' && (
+              <span
+                className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                  bookmark.healthStatus === 'healthy'
+                    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/50 dark:border-emerald-800/50'
+                    : bookmark.healthStatus === 'warning'
+                    ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/50 dark:border-amber-800/50'
+                    : bookmark.healthStatus === 'error'
+                    ? 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 border border-rose-200/50 dark:border-rose-800/50'
+                    : 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800'
+                }`}
+                title={
+                  bookmark.healthStatus === 'healthy'
+                    ? '链接健康 (可正常连通)'
+                    : bookmark.healthStatus === 'warning'
+                    ? '可能受限或重定向'
+                    : bookmark.healthStatus === 'error'
+                    ? '链接访问失败，请检查'
+                    : '正在检测连通性...'
+                }
+              >
+                {bookmark.healthStatus === 'healthy' && <CheckCircle className="w-2.5 h-2.5 text-emerald-500" />}
+                {bookmark.healthStatus === 'warning' && <AlertCircle className="w-2.5 h-2.5 text-amber-500" />}
+                {bookmark.healthStatus === 'error' && <AlertCircle className="w-2.5 h-2.5 text-rose-500" />}
+                {bookmark.healthStatus === 'checking' && <RefreshCw className="w-2.5 h-2.5 animate-spin text-neutral-400" />}
+                <span>
+                  {bookmark.healthStatus === 'healthy'
+                    ? '健康'
+                    : bookmark.healthStatus === 'warning'
+                    ? '异常'
+                    : bookmark.healthStatus === 'error'
+                    ? '失效'
+                    : '检测中'}
+                </span>
+              </span>
+            )}
           </div>
 
           {bookmark.notes && (
@@ -154,7 +196,10 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
           <span className="font-mono text-neutral-700 dark:text-neutral-300 font-medium">
             {bookmark.clickCount} 次
           </span>
-          <span className="text-[11px]">{formatRelativeTime(bookmark.lastClickedAt)}</span>
+          <span className={`text-[11px] inline-flex items-center gap-1 ${lastVisit.textColor}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${lastVisit.dotColor}`} />
+            {lastVisit.label}
+          </span>
         </div>
 
         <div className="flex items-center gap-0.5">
@@ -236,6 +281,6 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };

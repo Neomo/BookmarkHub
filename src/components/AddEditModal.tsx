@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Bookmark, Category } from '../types';
-import { fetchWebpageTitle } from '../utils/url';
+import { fetchWebpageTitle, fetchWebpageOgData } from '../utils/url';
 import { buildCategoryTree } from '../utils/storage';
 import { BOOKMARK_PALETTE } from '../utils/color';
-import { X, Loader2, Sparkles, Pin, Star, Plus, Check, Palette } from 'lucide-react';
+import { X, Loader2, Sparkles, Pin, Star, Plus, Check, Palette, Image as ImageIcon } from 'lucide-react';
 import { useToast } from './Toast';
 
 interface AddEditModalProps {
@@ -33,9 +33,11 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
   const [tagInput, setTagInput] = useState('');
   const [notes, setNotes] = useState('');
   const [color, setColor] = useState<string | undefined>(undefined);
+  const [coverImage, setCoverImage] = useState('');
   const [isPinned, setIsPinned] = useState(false);
   const [isStarred, setIsStarred] = useState(false);
   const [isFetchingTitle, setIsFetchingTitle] = useState(false);
+  const [isFetchingOg, setIsFetchingOg] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -48,6 +50,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       setIsPinned(bookmarkToEdit.isPinned);
       setIsStarred(bookmarkToEdit.isStarred);
       setColor(bookmarkToEdit.color);
+      setCoverImage(bookmarkToEdit.coverImage || bookmarkToEdit.ogImage || '');
     } else {
       setUrl('');
       setTitle('');
@@ -57,6 +60,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       setIsPinned(false);
       setIsStarred(false);
       setColor(undefined);
+      setCoverImage('');
     }
     setTagInput('');
   }, [bookmarkToEdit, isOpen, initialCategoryId, categories]);
@@ -80,6 +84,30 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       showToast('获取标题失败，请手动输入', 'error');
     } finally {
       setIsFetchingTitle(false);
+    }
+  };
+
+  const handleFetchOgData = async (targetUrl = url) => {
+    if (!targetUrl.trim()) return;
+    setIsFetchingOg(true);
+    try {
+      const data = await fetchWebpageOgData(targetUrl);
+      if (data.title && !title) {
+        setTitle(data.title);
+      }
+      if (data.ogImage) {
+        setCoverImage(data.ogImage);
+        showToast('已提取 OpenGraph 封面图片', 'success');
+      } else {
+        showToast('未检测到 OpenGraph 封面元数据，可手动输入图片 URL', 'info');
+      }
+      if (data.description && !notes) {
+        setNotes(data.description);
+      }
+    } catch {
+      showToast('获取 OpenGraph 元数据失败', 'error');
+    } finally {
+      setIsFetchingOg(false);
     }
   };
 
@@ -125,6 +153,8 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
       isPinned,
       isStarred,
       color: color || undefined,
+      coverImage: coverImage.trim() || undefined,
+      ogImage: coverImage.trim() || undefined,
     });
 
     onClose();
@@ -304,6 +334,57 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
               placeholder="添加简要备注，便于日后搜索与查阅..."
               className="w-full px-3 py-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100 placeholder:text-neutral-400 resize-none"
             />
+          </div>
+
+          {/* OpenGraph Cover Preview Image */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">
+                卡片封面 / OpenGraph 预览图 <span className="text-neutral-400 font-normal">(可选，用于卡片顶端封面)</span>
+              </label>
+              {coverImage && (
+                <button
+                  type="button"
+                  onClick={() => setCoverImage('')}
+                  className="text-[11px] text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+                >
+                  清除封面
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={coverImage}
+                onChange={(e) => setCoverImage(e.target.value)}
+                placeholder="例如: https://example.com/og-image.jpg"
+                className="flex-1 px-3 py-2 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 focus:outline-hidden focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100 placeholder:text-neutral-400 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => handleFetchOgData()}
+                disabled={isFetchingOg || !url.trim()}
+                title="智能提取该网站 OpenGraph 封面与元数据"
+                className="px-3 py-2 text-xs font-medium rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 disabled:opacity-40 transition-colors flex items-center gap-1.5 shrink-0"
+              >
+                {isFetchingOg ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                )}
+                <span>提取 OG</span>
+              </button>
+            </div>
+            {coverImage && (
+              <div className="mt-2 relative w-full h-24 rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-750">
+                <img
+                  src={coverImage}
+                  alt="封面预览"
+                  className="w-full h-full object-cover"
+                  onError={() => showToast('封面图片链接似乎无法加载，请确认地址有效', 'info')}
+                />
+              </div>
+            )}
           </div>
 
           {/* Visual Bookmark Color */}

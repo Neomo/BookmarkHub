@@ -6,17 +6,20 @@ import {
   executeImport,
   normalizeUrl,
 } from '../utils/storage';
+import { generateBookmarksMarkdown, downloadMarkdownFile } from '../utils/markdownExport';
 import {
   X,
   Download,
   Upload,
   FileJson,
+  FileText,
   AlertTriangle,
   CheckCircle2,
   Copy,
   Layers,
   ArrowRight,
   Info,
+  BookOpen,
 } from 'lucide-react';
 import { useToast } from './Toast';
 
@@ -35,7 +38,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   categories,
   onImportComplete,
 }) => {
-  const [activeTab, setActiveTab] = useState<'export' | 'import'>('export');
+  const [activeTab, setActiveTab] = useState<'export' | 'import' | 'markdown'>('export');
   const [importMode, setImportMode] = useState<ImportMode>('merge');
   const [importDiff, setImportDiff] = useState<ImportDiff | null>(null);
   const [rawJsonText, setRawJsonText] = useState('');
@@ -59,6 +62,19 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     };
     navigator.clipboard.writeText(JSON.stringify(data, null, 2));
     showToast('JSON 数据已复制到剪贴板', 'info');
+  };
+
+  const handleDownloadMarkdown = () => {
+    const mdContent = generateBookmarksMarkdown(bookmarks, categories);
+    const dateStr = new Date().toISOString().split('T')[0];
+    downloadMarkdownFile(mdContent, `bookmarkhub_export_${dateStr}.md`);
+    showToast('Markdown 文档已下载，可直接在 Notion/Obsidian 中打开', 'success');
+  };
+
+  const handleCopyMarkdown = () => {
+    const mdContent = generateBookmarksMarkdown(bookmarks, categories);
+    navigator.clipboard.writeText(mdContent);
+    showToast('Markdown 内容已复制到剪贴板', 'info');
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,7 +145,19 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
               }`}
             >
-              导出备份 (Export)
+              导出 JSON 备份
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('markdown')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                activeTab === 'markdown'
+                  ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5 text-indigo-500" />
+              导出 Markdown
             </button>
             <button
               type="button"
@@ -155,7 +183,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
 
         {/* Tab Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === 'export' ? (
+          {activeTab === 'export' && (
             <div className="space-y-6">
               <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/50 space-y-3">
                 <div className="flex items-center gap-2">
@@ -198,7 +226,66 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
                 </button>
               </div>
             </div>
-          ) : (
+          )}
+
+          {activeTab === 'markdown' && (
+            <div className="space-y-6">
+              <div className="p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/50 space-y-3">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-indigo-500" />
+                  <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    Notion / Obsidian 知识库格式 (Markdown)
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  按分类多级结构自动生成精美排版的 Markdown 文件，包含目录索引、网址超链接、标签、备注、健康状态与访问热度。完美兼容 Notion、Obsidian、Logseq、Typora、GitHub 等。
+                </p>
+
+                <div className="flex items-center gap-6 pt-2 text-xs text-neutral-600 dark:text-neutral-400 tabular-nums">
+                  <div>
+                    将导出书签: <strong className="text-neutral-900 dark:text-neutral-100">{bookmarks.length}</strong> 项
+                  </div>
+                  <div>
+                    涵盖分类: <strong className="text-neutral-900 dark:text-neutral-100">{categories.length}</strong> 个
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={handleDownloadMarkdown}
+                  className="flex-1 py-3 px-4 rounded-xl bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 font-medium text-xs hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>下载 .md 文档</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyMarkdown}
+                  className="py-3 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>复制 Markdown 内容</span>
+                </button>
+              </div>
+
+              {/* Preview preview box */}
+              <div className="p-3.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/70 dark:bg-neutral-950/40">
+                <div className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5 flex items-center justify-between">
+                  <span>Markdown 导出预览</span>
+                  <span className="text-[10px] text-neutral-400 font-normal">多级大纲格式</span>
+                </div>
+                <div className="max-h-32 overflow-y-auto font-mono text-[11px] text-neutral-500 whitespace-pre-wrap leading-relaxed select-text p-2 rounded bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800">
+                  {generateBookmarksMarkdown(bookmarks.slice(0, 5), categories)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'import' && (
             <div className="space-y-5">
               {/* File upload & Textarea */}
               {!importDiff ? (

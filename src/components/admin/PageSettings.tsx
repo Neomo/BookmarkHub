@@ -13,6 +13,7 @@ import {
   SlidersHorizontal,
   Check,
   FolderTree,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { useToast } from '../Toast';
 
@@ -210,7 +211,34 @@ export const PageSettings: React.FC<PageSettingsProps> = ({
           </label>
         </div>
 
-        {/* 4. Subcategories Default View Mode */}
+        {/* 4. Card OpenGraph / Cover Preview Toggle */}
+        <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+              <ImageIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                卡片封面与 OpenGraph 预览图
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                在卡片矩阵与分组视图中展示网址的 OpenGraph 封面预览图或自定义配图，提供更具辨识度的视觉体验
+              </p>
+            </div>
+          </div>
+
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={settings.showCardOgImage ?? true}
+              onChange={(e) => handleUpdate('showCardOgImage', e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-hidden rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-neutral-900 dark:peer-checked:bg-neutral-100 dark:peer-checked:after:bg-neutral-900"></div>
+          </label>
+        </div>
+
+        {/* 5. Subcategories Default View Mode */}
         <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center shrink-0">
@@ -304,6 +332,111 @@ export const PageSettings: React.FC<PageSettingsProps> = ({
             <option value={6}>6 个月 (推荐)</option>
             <option value={12}>12 个月 (1年)</option>
           </select>
+        </div>
+
+        {/* 7. Global Custom Keyboard Shortcuts */}
+        <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-4 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                <span>全局快捷键自定义</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500">
+                  Ctrl / ⌘ + 按键
+                </span>
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                自定义操作快捷触发按键，自动持久化保存到本地存储
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleUpdate('customShortcuts', {
+                  search: 'k',
+                  newBookmark: 'n',
+                  toggleTheme: 't',
+                  openAdmin: 'm',
+                  toggleView: 'v',
+                });
+              }}
+              className="text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 underline decoration-dotted"
+            >
+              恢复默认键位
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {[
+              {
+                id: 'search',
+                label: '聚焦搜索框',
+                desc: '快速定位到全局检索输入框',
+                value: settings.customShortcuts?.search || 'k',
+              },
+              {
+                id: 'newBookmark',
+                label: '新建书签收藏',
+                desc: '快速打开网址录入弹窗',
+                value: settings.customShortcuts?.newBookmark || 'n',
+              },
+              {
+                id: 'toggleTheme',
+                label: '切换深浅色主题',
+                desc: '明亮与暗夜模式即时切换',
+                value: settings.customShortcuts?.toggleTheme || 't',
+              },
+              {
+                id: 'openAdmin',
+                label: '打开全方位管理中心',
+                desc: '管理分类、标签、网址与备份',
+                value: settings.customShortcuts?.openAdmin || 'm',
+              },
+              {
+                id: 'toggleView',
+                label: '循环切换视图',
+                desc: '卡片 / 列表 / 分组布局快速切换',
+                value: settings.customShortcuts?.toggleView || 'v',
+              },
+            ].map((sc) => (
+              <div
+                key={sc.id}
+                className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/40 flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                    {sc.label}
+                  </div>
+                  <div className="text-[10px] text-neutral-400 truncate">{sc.desc}</div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0 font-mono text-xs">
+                  <span className="text-neutral-400 text-[11px]">Ctrl +</span>
+                  <input
+                    type="text"
+                    maxLength={1}
+                    value={sc.value.toUpperCase()}
+                    onChange={(e) => {
+                      const char = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+                      if (!char) return;
+                      const next = {
+                        ...(settings.customShortcuts || {
+                          search: 'k',
+                          newBookmark: 'n',
+                          toggleTheme: 't',
+                          openAdmin: 'm',
+                          toggleView: 'v',
+                        }),
+                        [sc.id]: char,
+                      };
+                      handleUpdate('customShortcuts', next);
+                    }}
+                    className="w-8 h-7 text-center font-bold text-xs uppercase bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-xs focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100 focus:outline-hidden"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
