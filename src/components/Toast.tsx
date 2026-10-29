@@ -24,7 +24,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const showToast = useCallback((message: string, type: ToastType = 'success') => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
-    setToasts((prev) => [...prev, { id, type, message }]);
+    
+    // Safely dispatch via setTimeout to guarantee state updates occur outside of any active React render or updater cycle
+    setTimeout(() => {
+      setToasts((prev) => [...prev, { id, type, message }]);
+    }, 0);
 
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));

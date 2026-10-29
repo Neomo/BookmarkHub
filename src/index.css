@@ -9,25 +9,29 @@
   .dark * {
     border-color: var(--color-neutral-800);
   }
+  body {
+    @apply antialiased selection:bg-neutral-900 selection:text-white dark:selection:bg-neutral-100 dark:selection:text-neutral-900;
+  }
 }
 
 /* Custom scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(150, 150, 150, 0.3);
-  border-radius: 3px;
+  background: rgba(160, 160, 160, 0.25);
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(150, 150, 150, 0.5);
+  background: rgba(160, 160, 160, 0.45);
 }
 
-/* Tabular numbers for all stats, counts and badges */
+/* Tabular numbers for all metrics, stats and counts */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+

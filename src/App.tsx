@@ -64,12 +64,14 @@ import {
   Inbox,
   GripVertical,
   Globe,
+  Shrink,
 } from 'lucide-react';
 
 function BookmarkHubApp() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { showToast } = useToast();
 
   // System Settings state
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(() => {
@@ -92,6 +94,26 @@ function BookmarkHubApp() {
   const [showOnlyPinned, setShowOnlyPinned] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState<SortOption>('custom');
+  // Compact mode state (reduces card footprint, list 2 per row, high density group)
+  const [isCompactMode, setIsCompactMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bookmarkhub_compact_mode') === 'true';
+    }
+    return false;
+  });
+
+  const handleToggleCompactMode = () => {
+    const next = !isCompactMode;
+    setIsCompactMode(next);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('bookmarkhub_compact_mode', next ? 'true' : 'false');
+      } catch {
+        // ignore
+      }
+    }
+    showToast(next ? '已开启紧凑模式（高密度展示）' : '已恢复标准视图模式', 'info');
+  };
 
   // Modals
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
@@ -130,7 +152,35 @@ function BookmarkHubApp() {
     return false;
   });
 
-  const { showToast } = useToast();
+  // Fullscreen focus mode
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const handleToggleFullscreen = () => {
+    if (!isFullscreen) {
+      setIsFullscreen(true);
+      if (typeof document !== 'undefined' && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } else {
+      setIsFullscreen(false);
+      if (typeof document !== 'undefined' && document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  };
+
+  // Sync fullscreen state with document fullscreenchange
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      } else {
+        setIsFullscreen(true);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   // Sensors for dnd-kit
   const sensors = useSensors(
@@ -301,6 +351,12 @@ function BookmarkHubApp() {
         else if (isQrModalOpen) setIsQrModalOpen(false);
         else if (isCommandPaletteOpen) setIsCommandPaletteOpen(false);
         else if (searchQuery) setSearchQuery('');
+        else if (isFullscreen) {
+          setIsFullscreen(false);
+          if (typeof document !== 'undefined' && document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          }
+        }
         return;
       }
 
@@ -355,6 +411,7 @@ function BookmarkHubApp() {
     isCommandPaletteOpen,
     searchQuery,
     isDark,
+    isFullscreen,
   ]);
 
   // Save changes to localStorage
@@ -458,6 +515,16 @@ function BookmarkHubApp() {
       return b;
     });
     updateBookmarks(updated);
+  };
+
+  // Select category and reset conflicting filters
+  const handleSelectCategory = (id: string | null) => {
+    setActiveCategoryId(id);
+    if (id !== null) {
+      setShowOnlyStarred(false);
+      setShowOnlyPinned(false);
+      setSelectedTag(null);
+    }
   };
 
   // Pin toggle
@@ -867,6 +934,10 @@ function BookmarkHubApp() {
         isDark={isDark}
         onToggleTheme={handleToggleTheme}
         inactiveCount={inactiveCount}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
+        isCompactMode={isCompactMode}
+        onToggleCompactMode={handleToggleCompactMode}
       />
 
       {/* DndContext wrapping both Sidebar and Main Viewport to enable cross-component drop */}
@@ -876,46 +947,42 @@ function BookmarkHubApp() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 flex max-w-400 w-full mx-auto">
+        <div className={`flex-1 flex w-full mx-auto ${isFullscreen ? 'max-w-none px-2 sm:px-6' : 'max-w-400'}`}>
           {/* Left Sidebar with Droppable Category Targets */}
-          <Sidebar
-            categories={categories}
-            bookmarks={bookmarks}
-            activeCategoryId={activeCategoryId}
-            onSelectCategory={(id) => {
-              setActiveCategoryId(id);
-              if (id !== null) {
-                setShowOnlyStarred(false);
-                setShowOnlyPinned(false);
-              }
-            }}
-            showOnlyStarred={showOnlyStarred}
-            onToggleShowStarred={() => {
-              setShowOnlyStarred(!showOnlyStarred);
-              if (!showOnlyStarred) {
-                setActiveCategoryId(null);
-                setShowOnlyPinned(false);
-              }
-            }}
-            showOnlyPinned={showOnlyPinned}
-            onToggleShowPinned={() => {
-              setShowOnlyPinned(!showOnlyPinned);
-              if (!showOnlyPinned) {
-                setActiveCategoryId(null);
-                setShowOnlyStarred(false);
-              }
-            }}
-            selectedTag={selectedTag}
-            onSelectTag={setSelectedTag}
-            allTags={allTags}
-            onOpenCategoryModal={() => setIsCategoryModalOpen(true)}
-            onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
-            onOpenAdmin={() => handleOpenAdmin('categories')}
-            isOpenMobile={isSidebarMobileOpen}
-            onCloseMobile={() => setIsSidebarMobileOpen(false)}
-            isDraggingBookmark={!!activeDragBookmark}
-            inactiveCount={inactiveCount}
-          />
+          {!isFullscreen && (
+            <Sidebar
+              categories={categories}
+              bookmarks={bookmarks}
+              activeCategoryId={activeCategoryId}
+              onSelectCategory={handleSelectCategory}
+              showOnlyStarred={showOnlyStarred}
+              onToggleShowStarred={() => {
+                setShowOnlyStarred(!showOnlyStarred);
+                if (!showOnlyStarred) {
+                  setActiveCategoryId(null);
+                  setShowOnlyPinned(false);
+                }
+              }}
+              showOnlyPinned={showOnlyPinned}
+              onToggleShowPinned={() => {
+                setShowOnlyPinned(!showOnlyPinned);
+                if (!showOnlyPinned) {
+                  setActiveCategoryId(null);
+                  setShowOnlyStarred(false);
+                }
+              }}
+              selectedTag={selectedTag}
+              onSelectTag={setSelectedTag}
+              allTags={allTags}
+              onOpenCategoryModal={() => setIsCategoryModalOpen(true)}
+              onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
+              onOpenAdmin={() => handleOpenAdmin('categories')}
+              isOpenMobile={isSidebarMobileOpen}
+              onCloseMobile={() => setIsSidebarMobileOpen(false)}
+              isDraggingBookmark={!!activeDragBookmark}
+              inactiveCount={inactiveCount}
+            />
+          )}
 
           {/* Content Viewport */}
           <main
@@ -923,14 +990,31 @@ function BookmarkHubApp() {
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
+            {/* Fullscreen Zen Focus Notification Banner */}
+            {isFullscreen && (
+              <div className="mb-4 p-2.5 px-3.5 rounded-xl border border-indigo-200/60 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/30 flex items-center justify-between text-xs text-indigo-700 dark:text-indigo-300">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                  <span>全屏专注模式：已隐藏侧边栏与辅助模块，专注浏览与检索书签。按 <kbd className="px-1.5 py-0.5 font-mono text-[10px] bg-white dark:bg-neutral-800 border border-indigo-200 dark:border-indigo-800 rounded">Esc</kbd> 退出。</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleFullscreen}
+                  className="px-2.5 py-1 rounded-lg bg-white dark:bg-neutral-800 border border-indigo-200 dark:border-indigo-800 font-medium hover:bg-indigo-50 dark:hover:bg-neutral-700 transition-colors shrink-0 shadow-xs"
+                >
+                  退出全屏
+                </button>
+              </div>
+            )}
+
             {/* 1. Daily Picks Banner: Shows one random unvisited bookmarked URL every day (if enabled in settings) */}
-            {systemSettings.enableDailyPicks && (
+            {!isFullscreen && systemSettings.enableDailyPicks && (
               <DailyPicksBanner
                 bookmarks={bookmarks}
                 categories={categories}
                 onRecordClick={handleRecordClick}
                 onShowQrCode={handleShowQrCode}
-                onSelectCategory={(catId) => setActiveCategoryId(catId)}
+                onSelectCategory={handleSelectCategory}
                 onSelectTag={(tag) => setSelectedTag(tag)}
               />
             )}
@@ -1025,6 +1109,21 @@ function BookmarkHubApp() {
                     <option value="title_asc" className="dark:bg-neutral-900">标题字母 (A-Z)</option>
                   </select>
                 </div>
+
+                {/* Compact Mode Toggle Button */}
+                <button
+                  type="button"
+                  onClick={handleToggleCompactMode}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                    isCompactMode
+                      ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 border-neutral-900 dark:border-neutral-100 shadow-xs'
+                      : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                  }`}
+                  title={isCompactMode ? '当前为紧凑模式（点击恢复标准模式）' : '开启紧凑模式（卡片缩小宽高/列表双列展示）'}
+                >
+                  <Shrink className="w-3.5 h-3.5" />
+                  <span>紧凑</span>
+                </button>
 
                 {/* Batch Add Button */}
                 <button
@@ -1138,7 +1237,13 @@ function BookmarkHubApp() {
                       items={filteredAndSortedBookmarks.map((b) => b.id)}
                       strategy={rectSortingStrategy}
                     >
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+                      <div
+                        className={
+                          isCompactMode
+                            ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-3.5'
+                            : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5'
+                        }
+                      >
                         {filteredAndSortedBookmarks.map((bm) => (
                           <SortableBookmarkCard
                             key={bm.id}
@@ -1155,6 +1260,8 @@ function BookmarkHubApp() {
                             onSelectTag={(tag) => setSelectedTag(tag)}
                             onShowQrCode={handleShowQrCode}
                             showOgImage={systemSettings.showCardOgImage ?? true}
+                            onSelectCategory={handleSelectCategory}
+                            isCompact={isCompactMode}
                           />
                         ))}
                       </div>
@@ -1163,7 +1270,13 @@ function BookmarkHubApp() {
 
                   {/* 2. List View */}
                   {viewMode === 'list' && (
-                    <div className="space-y-1.5">
+                    <div
+                      className={
+                        isCompactMode
+                          ? 'grid grid-cols-1 md:grid-cols-2 gap-2'
+                          : 'space-y-1.5'
+                      }
+                    >
                       {filteredAndSortedBookmarks.map((bm) => (
                         <BookmarkListRow
                           key={bm.id}
@@ -1179,6 +1292,8 @@ function BookmarkHubApp() {
                           onRecordClick={handleRecordClick}
                           onSelectTag={(tag) => setSelectedTag(tag)}
                           onShowQrCode={handleShowQrCode}
+                          onSelectCategory={handleSelectCategory}
+                          isCompact={isCompactMode}
                         />
                       ))}
                     </div>
@@ -1203,6 +1318,8 @@ function BookmarkHubApp() {
                       onShowQrCode={handleShowQrCode}
                       globalDefaultSubView={systemSettings.defaultSubCategoriesView}
                       showOgImage={systemSettings.showCardOgImage ?? true}
+                      onSelectCategory={handleSelectCategory}
+                      isCompactMode={isCompactMode}
                     />
                   )}
                 </>
@@ -1283,30 +1400,32 @@ function BookmarkHubApp() {
       </DndContext>
 
       {/* Mobile Bottom Navigation Bar */}
-      <MobileNav
-        onSelectAll={() => {
-          setActiveCategoryId(null);
-          setShowOnlyStarred(false);
-          setShowOnlyPinned(false);
-          setSelectedTag(null);
-          setSearchQuery('');
-        }}
-        onToggleSidebarMobile={() => setIsSidebarMobileOpen((prev) => !prev)}
-        showOnlyStarred={showOnlyStarred}
-        onToggleShowStarred={() => setShowOnlyStarred(!showOnlyStarred)}
-        onOpenStatsModal={() => setIsStatsModalOpen(true)}
-        onOpenAddModal={() => {
-          setBookmarkToEdit(null);
-          setIsAddEditOpen(true);
-        }}
-        isHomeActive={
-          activeCategoryId === null &&
-          !showOnlyStarred &&
-          !showOnlyPinned &&
-          !selectedTag &&
-          !searchQuery
-        }
-      />
+      {!isFullscreen && (
+        <MobileNav
+          onSelectAll={() => {
+            setActiveCategoryId(null);
+            setShowOnlyStarred(false);
+            setShowOnlyPinned(false);
+            setSelectedTag(null);
+            setSearchQuery('');
+          }}
+          onToggleSidebarMobile={() => setIsSidebarMobileOpen((prev) => !prev)}
+          showOnlyStarred={showOnlyStarred}
+          onToggleShowStarred={() => setShowOnlyStarred(!showOnlyStarred)}
+          onOpenStatsModal={() => setIsStatsModalOpen(true)}
+          onOpenAddModal={() => {
+            setBookmarkToEdit(null);
+            setIsAddEditOpen(true);
+          }}
+          isHomeActive={
+            activeCategoryId === null &&
+            !showOnlyStarred &&
+            !showOnlyPinned &&
+            !selectedTag &&
+            !searchQuery
+          }
+        />
+      )}
 
       {/* QR Code Modal */}
       <QrCodeModal
@@ -1408,10 +1527,12 @@ function BookmarkHubApp() {
       />
 
       {/* Floating Keyboard Shortcuts Helper Indicator */}
-      <FloatingKeyboardShortcuts
-        shortcuts={systemSettings.customShortcuts}
-        onOpenSettings={() => handleOpenAdmin('settings')}
-      />
+      {!isFullscreen && (
+        <FloatingKeyboardShortcuts
+          shortcuts={systemSettings.customShortcuts}
+          onOpenSettings={() => handleOpenAdmin('settings')}
+        />
+      )}
     </div>
   );
 }

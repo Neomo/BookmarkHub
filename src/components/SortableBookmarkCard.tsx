@@ -16,6 +16,8 @@ interface SortableBookmarkCardProps {
   onShowQrCode?: (bookmark: Bookmark) => void;
   isDragDisabled?: boolean;
   showOgImage?: boolean;
+  onSelectCategory?: (categoryId: string) => void;
+  isCompact?: boolean;
 }
 
 export const SortableBookmarkCard: React.FC<SortableBookmarkCardProps> = ({
@@ -30,7 +32,11 @@ export const SortableBookmarkCard: React.FC<SortableBookmarkCardProps> = ({
   onShowQrCode,
   isDragDisabled = false,
   showOgImage = true,
+  onSelectCategory,
+  isCompact = false,
 }) => {
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+
   const {
     attributes,
     listeners,
@@ -46,11 +52,11 @@ export const SortableBookmarkCard: React.FC<SortableBookmarkCardProps> = ({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 40 : undefined,
+    zIndex: isDragging ? 50 : isMenuOpen ? 40 : undefined,
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="h-full">
+    <div ref={setNodeRef} style={style} className={`h-full ${isMenuOpen ? 'relative z-40' : ''}`}>
       <BookmarkCard
         bookmark={bookmark}
         category={category}
@@ -64,6 +70,9 @@ export const SortableBookmarkCard: React.FC<SortableBookmarkCardProps> = ({
         dragHandleProps={isDragDisabled ? undefined : { ...attributes, ...listeners }}
         isDragging={isDragging}
         showOgImage={showOgImage}
+        onSelectCategory={onSelectCategory}
+        isCompact={isCompact}
+        onMenuOpenChange={setIsMenuOpen}
       />
     </div>
   );

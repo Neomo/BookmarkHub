@@ -30,6 +30,8 @@ interface BookmarkGroupViewProps {
   onShowQrCode?: (bookmark: Bookmark) => void;
   globalDefaultSubView?: 'expanded' | 'collapsed';
   showOgImage?: boolean;
+  onSelectCategory?: (categoryId: string) => void;
+  isCompactMode?: boolean;
 }
 
 // Droppable subcategory tab for horizontal filter row
@@ -203,6 +205,8 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
   onShowQrCode,
   globalDefaultSubView = 'expanded',
   showOgImage = true,
+  onSelectCategory,
+  isCompactMode = false,
 }) => {
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [collapsedSubcategoryBars, setCollapsedSubcategoryBars] = useState<Record<string, boolean>>({});
@@ -404,7 +408,13 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
                     items={displayedBookmarks.map((b) => b.id)}
                     strategy={rectSortingStrategy}
                   >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 pt-1">
+                    <div
+                      className={
+                        isCompactMode
+                          ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-3.5 pt-1'
+                          : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 pt-1'
+                      }
+                    >
                       {displayedBookmarks.map((bm) => (
                         <SortableBookmarkCard
                           key={bm.id}
@@ -418,6 +428,8 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
                           onSelectTag={onSelectTag}
                           onShowQrCode={onShowQrCode}
                           showOgImage={showOgImage}
+                          onSelectCategory={onSelectCategory}
+                          isCompact={isCompactMode}
                         />
                       ))}
                     </div>
@@ -459,7 +471,13 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
             items={uncategorizedBookmarks.map((b) => b.id)}
             strategy={rectSortingStrategy}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 pt-1">
+            <div
+              className={
+                isCompactMode
+                  ? 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-3.5 pt-1'
+                  : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 pt-1'
+              }
+            >
               {uncategorizedBookmarks.map((bm) => (
                 <SortableBookmarkCard
                   key={bm.id}
@@ -472,6 +490,8 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
                   onSelectTag={onSelectTag}
                   onShowQrCode={onShowQrCode}
                   showOgImage={showOgImage}
+                  onSelectCategory={onSelectCategory}
+                  isCompact={isCompactMode}
                 />
               ))}
             </div>

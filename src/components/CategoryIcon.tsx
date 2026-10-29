@@ -226,10 +226,10 @@ const iconMap: Record<string, React.FC<LucideProps>> = {
 };
 
 interface CategoryIconProps extends LucideProps {
-  name: string;
+  name?: string;
 }
 
 export const CategoryIcon: React.FC<CategoryIconProps> = ({ name, ...props }) => {
-  const IconComponent = iconMap[name] || Folder;
+  const IconComponent = (name && iconMap[name]) || Folder;
   return <IconComponent {...props} />;
 };
