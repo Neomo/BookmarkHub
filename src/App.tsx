@@ -43,6 +43,7 @@ import { Sidebar } from './components/Sidebar';
 import { SortableBookmarkCard } from './components/SortableBookmarkCard';
 import { BookmarkListRow } from './components/BookmarkListRow';
 import { BookmarkGroupView } from './components/BookmarkGroupView';
+import { GroupFloatingToc } from './components/GroupFloatingToc';
 import { DailyPicksBanner } from './components/DailyPicksBanner';
 import { ArchiveModal } from './components/ArchiveModal';
 import { AddEditModal } from './components/AddEditModal';
@@ -101,6 +102,10 @@ function BookmarkHubApp() {
     }
     return false;
   });
+
+  // Targeted category ID when navigating in group view
+  const [targetedGroupCategoryId, setTargetedGroupCategoryId] = useState<string | null>(null);
+  const pendingScrollCategoryIdRef = useRef<string | null>(null);
 
   const handleToggleCompactMode = () => {
     const next = !isCompactMode;
@@ -527,6 +532,54 @@ function BookmarkHubApp() {
     }
   };
 
+  // Smooth scroll helper for group directory navigation
+  const scrollToCategorySection = (catId: string) => {
+    const targetElementId = catId === 'uncategorized' ? 'group-root-uncategorized' : `group-root-${catId}`;
+    const tryScroll = () => {
+      const el = document.getElementById(targetElementId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return true;
+      }
+      return false;
+    };
+
+    if (!tryScroll()) {
+      requestAnimationFrame(() => {
+        if (!tryScroll()) {
+          setTimeout(tryScroll, 60);
+        }
+      });
+    }
+  };
+
+  // Jump to root category in group view:
+  // Case 1: If currently showing all websites (activeCategoryId === null):
+  //         Directly smooth scroll to that category's section! (Does NOT filter/change activeCategoryId)
+  // Case 2: If currently viewing a filtered category (activeCategoryId !== null):
+  //         First reset view to all websites (setActiveCategoryId(null)), then smooth scroll to that category!
+  const handleJumpToGroupCategory = (targetCategoryId: string) => {
+    setTargetedGroupCategoryId(targetCategoryId);
+    if (activeCategoryId !== null) {
+      pendingScrollCategoryIdRef.current = targetCategoryId;
+      setActiveCategoryId(null);
+    } else {
+      scrollToCategorySection(targetCategoryId);
+    }
+  };
+
+  // When activeCategoryId changes to null and there is a pending scroll target, scroll to it
+  useEffect(() => {
+    if (activeCategoryId === null && pendingScrollCategoryIdRef.current) {
+      const targetId = pendingScrollCategoryIdRef.current;
+      pendingScrollCategoryIdRef.current = null;
+      const timer = setTimeout(() => {
+        scrollToCategorySection(targetId);
+      }, 60);
+      return () => clearTimeout(timer);
+    }
+  }, [activeCategoryId]);
+
   // Pin toggle
   const handleTogglePin = (id: string) => {
     const target = bookmarks.find((b) => b.id === id);
@@ -916,7 +969,7 @@ function BookmarkHubApp() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col font-sans canvas-ambient-light">
       {/* Top Bar Header */}
       <Header
         viewMode={viewMode}
@@ -1081,13 +1134,13 @@ function BookmarkHubApp() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="搜索网址、拼音首字母..."
-                    className="w-full pl-8 pr-7 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-neutral-900 dark:focus:ring-neutral-100"
+                    className="w-full pl-8 pr-7 py-1.5 text-xs rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-hidden focus:ring-1 focus:ring-neutral-400 dark:focus:ring-neutral-600 focus:border-neutral-400 dark:focus:border-neutral-600 transition-all shadow-2xs"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1095,7 +1148,7 @@ function BookmarkHubApp() {
                 </div>
 
                 {/* Sort Dropdown */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 text-xs">
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 text-xs shadow-2xs transition-colors hover:border-neutral-300 dark:hover:border-neutral-700">
                   <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
                   <select
                     value={sortOption}
@@ -1114,10 +1167,10 @@ function BookmarkHubApp() {
                 <button
                   type="button"
                   onClick={handleToggleCompactMode}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-all cursor-pointer ${
                     isCompactMode
-                      ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 border-neutral-900 dark:border-neutral-100 shadow-xs'
-                      : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                      ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 border-neutral-900 dark:border-neutral-100 shadow-2xs font-semibold'
+                      : 'border-neutral-200/90 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 shadow-2xs'
                   }`}
                   title={isCompactMode ? '当前为紧凑模式（点击恢复标准模式）' : '开启紧凑模式（卡片缩小宽高/列表双列展示）'}
                 >
@@ -1129,7 +1182,7 @@ function BookmarkHubApp() {
                 <button
                   type="button"
                   onClick={() => setIsBatchAddOpen(true)}
-                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-neutral-200/90 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors shadow-2xs cursor-pointer"
                   title="批量导入多条网址"
                 >
                   <ListPlus className="w-3.5 h-3.5" />
@@ -1144,12 +1197,12 @@ function BookmarkHubApp() {
                 <span className="text-neutral-400 text-[11px]">当前过滤:</span>
 
                 {activeCategoryId && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
-                    分类: {currentParent ? `${currentParent.name} / ` : ''}{currentCat?.name}
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-850 text-neutral-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-neutral-800">
+                    <span>分类: {currentParent ? `${currentParent.name} / ` : ''}{currentCat?.name}</span>
                     <button
                       type="button"
                       onClick={() => setActiveCategoryId(null)}
-                      className="hover:text-rose-500"
+                      className="hover:text-rose-500 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1157,12 +1210,12 @@ function BookmarkHubApp() {
                 )}
 
                 {selectedTag && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
-                    #{selectedTag}
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
+                    <span>#{selectedTag}</span>
                     <button
                       type="button"
                       onClick={() => setSelectedTag(null)}
-                      className="hover:text-rose-500"
+                      className="hover:text-rose-500 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1170,12 +1223,12 @@ function BookmarkHubApp() {
                 )}
 
                 {showOnlyStarred && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40">
-                    ⭐ 星标
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900/40">
+                    <span>⭐ 星标</span>
                     <button
                       type="button"
                       onClick={() => setShowOnlyStarred(false)}
-                      className="hover:text-rose-500"
+                      className="hover:text-rose-500 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1183,12 +1236,12 @@ function BookmarkHubApp() {
                 )}
 
                 {showOnlyPinned && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100">
-                    📌 置顶
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-neutral-200/70 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 border border-neutral-300/80 dark:border-neutral-700">
+                    <span>📌 置顶</span>
                     <button
                       type="button"
                       onClick={() => setShowOnlyPinned(false)}
-                      className="hover:text-rose-500"
+                      className="hover:text-rose-500 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1196,12 +1249,12 @@ function BookmarkHubApp() {
                 )}
 
                 {searchQuery && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200">
-                    关键词: &ldquo;{searchQuery}&rdquo;
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-850 text-neutral-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-neutral-800">
+                    <span>关键词: &ldquo;{searchQuery}&rdquo;</span>
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
-                      className="hover:text-rose-500"
+                      className="hover:text-rose-500 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1217,7 +1270,7 @@ function BookmarkHubApp() {
                     setShowOnlyPinned(false);
                     setSearchQuery('');
                   }}
-                  className="text-[11px] text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 underline decoration-dotted ml-1"
+                  className="text-[11px] text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100 underline decoration-dotted ml-1 cursor-pointer"
                 >
                   重置全部
                 </button>
@@ -1320,6 +1373,7 @@ function BookmarkHubApp() {
                       showOgImage={systemSettings.showCardOgImage ?? true}
                       onSelectCategory={handleSelectCategory}
                       isCompactMode={isCompactMode}
+                      targetedCategoryId={targetedGroupCategoryId}
                     />
                   )}
                 </>
@@ -1531,6 +1585,17 @@ function BookmarkHubApp() {
         <FloatingKeyboardShortcuts
           shortcuts={systemSettings.customShortcuts}
           onOpenSettings={() => handleOpenAdmin('settings')}
+        />
+      )}
+
+      {/* Group View: Floating Directory Quick-jump Navigation Rail (Always visible in viewport in group view) */}
+      {viewMode === 'group' && (
+        <GroupFloatingToc
+          categories={categories}
+          bookmarks={bookmarks}
+          activeCategoryId={activeCategoryId}
+          onJumpToCategory={handleJumpToGroupCategory}
+          onScrollToTop={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         />
       )}
     </div>

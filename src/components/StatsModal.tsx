@@ -22,6 +22,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useToast } from './Toast';
+import { ModalWrapper } from './ModalWrapper';
 
 interface StatsModalProps {
   isOpen: boolean;
@@ -110,8 +111,6 @@ export const StatsModal: React.FC<StatsModalProps> = ({
 
     return weeks;
   }, [bookmarks]);
-
-  if (!isOpen) return null;
 
   const totalBookmarks = bookmarks.length;
   const starredCount = bookmarks.filter((b) => b.isStarred).length;
@@ -207,11 +206,12 @@ export const StatsModal: React.FC<StatsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-      <div
-        className="w-full max-w-3xl bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-3xl"
+      className="max-h-[90vh]"
+    >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
           <div className="flex items-center gap-2">
@@ -764,7 +764,6 @@ export const StatsModal: React.FC<StatsModalProps> = ({
             关闭
           </button>
         </div>
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };

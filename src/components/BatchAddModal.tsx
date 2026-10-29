@@ -4,6 +4,7 @@ import { parseBatchInput, ParsedBatchItem } from '../utils/url';
 import { buildCategoryTree } from '../utils/storage';
 import { X, ListPlus, Check } from 'lucide-react';
 import { useToast } from './Toast';
+import { ModalWrapper } from './ModalWrapper';
 
 interface BatchAddModalProps {
   isOpen: boolean;
@@ -28,8 +29,6 @@ export const BatchAddModal: React.FC<BatchAddModalProps> = ({
     return parseBatchInput(inputText);
   }, [inputText]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (parsedItems.length === 0) {
@@ -50,11 +49,12 @@ export const BatchAddModal: React.FC<BatchAddModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-      <div
-        className="w-full max-w-xl bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-xl"
+      className="max-h-[90vh]"
+    >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
           <div className="flex items-center gap-2">
@@ -177,7 +177,6 @@ export const BatchAddModal: React.FC<BatchAddModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };

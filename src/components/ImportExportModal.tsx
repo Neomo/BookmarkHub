@@ -22,6 +22,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { useToast } from './Toast';
+import { ModalWrapper } from './ModalWrapper';
 
 interface ImportExportModalProps {
   isOpen: boolean;
@@ -44,8 +45,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   const [rawJsonText, setRawJsonText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
-
-  if (!isOpen) return null;
 
   const handleExportFile = () => {
     exportDataAsJSON(bookmarks, categories);
@@ -128,11 +127,12 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-      <div
-        className="w-full max-w-2xl bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-2xl"
+      className="max-h-[90vh]"
+    >
         {/* Header with Segmented Tab */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
           <div className="flex items-center gap-1 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
@@ -505,7 +505,6 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };

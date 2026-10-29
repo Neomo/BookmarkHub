@@ -16,6 +16,7 @@ import {
   CornerDownLeft,
   Archive,
 } from 'lucide-react';
+import { ModalWrapper } from './ModalWrapper';
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -61,8 +62,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [isOpen]);
-
-  if (!isOpen) return null;
 
   const catObjMap = new Map<string, Category>();
   for (const cat of categories) {
@@ -216,15 +215,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/50 backdrop-blur-xs animate-in fade-in"
-      onClick={onClose}
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      position="top"
+      maxWidth="max-w-xl"
     >
-      <div
-        className="w-full max-w-xl bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={handleKeyDown}
-      >
+      <div onKeyDown={handleKeyDown} className="flex flex-col">
         {/* Search Input bar */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-neutral-200 dark:border-neutral-800">
           <Search className="w-4 h-4 text-neutral-400 shrink-0" />
@@ -357,6 +354,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <span>BookmarkHub 全局检索</span>
         </div>
       </div>
-    </div>
+    </ModalWrapper>
   );
 };

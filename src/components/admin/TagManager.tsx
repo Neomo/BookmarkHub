@@ -24,6 +24,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useToast } from '../Toast';
+import { ModalWrapper } from '../ModalWrapper';
 
 interface TagManagerProps {
   bookmarks: Bookmark[];
@@ -389,12 +390,12 @@ export const TagManager: React.FC<TagManagerProps> = ({
       {/* ======================================================== */}
       {/* Rename Tag Modal                                         */}
       {/* ======================================================== */}
-      {renameTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div
-            className="w-full max-w-sm bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <ModalWrapper
+        isOpen={Boolean(renameTarget)}
+        onClose={() => setRenameTarget(null)}
+        maxWidth="max-w-sm"
+        className="p-6 space-y-4"
+      >
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <Edit2 className="w-4 h-4 text-neutral-500" />
               <span>重命名标签: #{renameTarget}</span>
@@ -434,19 +435,17 @@ export const TagManager: React.FC<TagManagerProps> = ({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </ModalWrapper>
 
       {/* ======================================================== */}
       {/* Merge Tag Modal                                          */}
       {/* ======================================================== */}
-      {mergeTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div
-            className="w-full max-w-sm bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <ModalWrapper
+        isOpen={Boolean(mergeTarget)}
+        onClose={() => setMergeTarget(null)}
+        maxWidth="max-w-sm"
+        className="p-6 space-y-4"
+      >
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <GitMerge className="w-4 h-4 text-neutral-500" />
               <span>合并标签: #{mergeTarget}</span>
@@ -492,9 +491,7 @@ export const TagManager: React.FC<TagManagerProps> = ({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </ModalWrapper>
     </div>
   );
 };

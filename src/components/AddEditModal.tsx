@@ -5,6 +5,7 @@ import { buildCategoryTree } from '../utils/storage';
 import { BOOKMARK_PALETTE } from '../utils/color';
 import { X, Loader2, Sparkles, Pin, Star, Plus, Check, Palette, Image as ImageIcon } from 'lucide-react';
 import { useToast } from './Toast';
+import { ModalWrapper } from './ModalWrapper';
 
 interface AddEditModalProps {
   isOpen: boolean;
@@ -64,8 +65,6 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
     }
     setTagInput('');
   }, [bookmarkToEdit, isOpen, initialCategoryId, categories]);
-
-  if (!isOpen) return null;
 
   const handleFetchTitle = async (targetUrl = url) => {
     if (!targetUrl.trim()) return;
@@ -166,11 +165,12 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
     .slice(0, 6);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-      <div
-        className="w-full max-w-lg bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-lg"
+      className="max-h-[90vh]"
+    >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
           <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
@@ -511,7 +511,6 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };

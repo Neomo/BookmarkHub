@@ -86,22 +86,23 @@ export const Header: React.FC<HeaderProps> = ({
         </a>
 
         {isFullscreen && (
-          <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60">
-            全屏专注模式
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-850 text-neutral-600 dark:text-neutral-400 border border-neutral-200/80 dark:border-neutral-800">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+            <span>全屏专注</span>
           </span>
         )}
       </div>
 
       {/* Zone 2: Navigation Links / View Switchers (Single line, quiet typography) */}
-      <nav className="hidden md:flex items-center gap-1 text-xs font-medium text-neutral-600 dark:text-neutral-400 shrink-0">
-        <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+      <nav className="hidden md:flex items-center gap-1.5 text-xs font-medium text-neutral-600 dark:text-neutral-400 shrink-0">
+        <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-850 rounded-lg border border-neutral-200/60 dark:border-neutral-800/60">
           <button
             type="button"
             onClick={() => onChangeViewMode('card')}
             title="卡片视图"
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 whitespace-nowrap cursor-pointer ${
               viewMode === 'card'
-                ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                ? 'bg-white dark:bg-neutral-750 text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold'
                 : 'hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
@@ -112,9 +113,9 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={() => onChangeViewMode('list')}
             title="列表视图"
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 whitespace-nowrap cursor-pointer ${
               viewMode === 'list'
-                ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                ? 'bg-white dark:bg-neutral-750 text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold'
                 : 'hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
@@ -125,9 +126,9 @@ export const Header: React.FC<HeaderProps> = ({
             type="button"
             onClick={() => onChangeViewMode('group')}
             title="分类分组视图"
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 whitespace-nowrap cursor-pointer ${
               viewMode === 'group'
-                ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-xs'
+                ? 'bg-white dark:bg-neutral-750 text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold'
                 : 'hover:text-neutral-900 dark:hover:text-neutral-200'
             }`}
           >
@@ -140,12 +141,12 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={onToggleCompactMode}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg border text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all duration-150 whitespace-nowrap cursor-pointer ${
               isCompactMode
-                ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 border-neutral-900 dark:border-neutral-100 shadow-xs font-semibold'
-                : 'border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 border-neutral-900 dark:border-neutral-100 shadow-2xs font-semibold'
+                : 'border-neutral-200/80 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/80 dark:hover:bg-neutral-800'
             }`}
-            title={isCompactMode ? '紧凑模式已开启（卡片缩小宽高/列表双列展示），点击还原' : '开启紧凑模式（缩小宽高/一行双列列表/更多卡片）'}
+            title={isCompactMode ? '紧凑模式已开启（缩小卡片/双列列表），点击还原' : '开启紧凑模式（高密度网格/双列列表）'}
           >
             <Shrink className="w-3.5 h-3.5" />
             <span>紧凑</span>
@@ -154,12 +155,12 @@ export const Header: React.FC<HeaderProps> = ({
 
         {!isFullscreen && (
           <>
-            <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800 mx-2" />
+            <div className="h-4 w-px bg-neutral-200 dark:bg-neutral-800 mx-1.5" />
 
             <button
               type="button"
               onClick={onOpenStatsModal}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap cursor-pointer"
             >
               <BarChart3 className="w-3.5 h-3.5" />
               <span>统计排行</span>
@@ -168,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               type="button"
               onClick={onOpenImportExportModal}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
               <span>导入导出</span>
@@ -178,15 +179,14 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenArchiveModal}
-                className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap cursor-pointer"
                 title="6 个月未访问闲置书签智能归档"
               >
                 <Archive className="w-3.5 h-3.5" />
                 <span>闲置归档</span>
                 {inactiveCount > 0 && (
-                  <span className="flex h-2 w-2 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 tabular-nums font-semibold">
+                    {inactiveCount}
                   </span>
                 )}
               </button>
@@ -196,7 +196,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenAdmin}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-neutral-900 dark:text-neutral-100 font-semibold hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-neutral-900 dark:text-neutral-100 font-semibold hover:bg-neutral-100/80 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap cursor-pointer"
                 title="系统全方位管理后台"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />

@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useDroppable } from '@dnd-kit/core';
 import { Category, Bookmark } from '../types';
 import { CategoryIcon } from './CategoryIcon';
@@ -665,29 +666,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </aside>
 
       {/* Mobile Slide-over Drawer */}
-      {isOpenMobile && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
-            onClick={onCloseMobile}
-          />
-          <div className="fixed inset-y-0 left-0 w-72 max-w-[80vw] bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col z-50 animate-in slide-in-from-left duration-200">
-            <div className="p-3.5 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800">
-              <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
-                导航台与分类
-              </span>
-              <button
-                type="button"
-                onClick={onCloseMobile}
-                className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden">{renderSidebarContent(true)}</div>
+      <AnimatePresence>
+        {isOpenMobile && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-0 bg-neutral-950/60 dark:bg-black/75 backdrop-blur-md"
+              onClick={onCloseMobile}
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              className="fixed inset-y-0 left-0 w-72 max-w-[80vw] bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 shadow-2xl flex flex-col z-50"
+            >
+              <div className="p-3.5 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800">
+                <span className="font-bold text-sm text-neutral-900 dark:text-neutral-100">
+                  导航台与分类
+                </span>
+                <button
+                  type="button"
+                  onClick={onCloseMobile}
+                  className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-hidden">{renderSidebarContent(true)}</div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </>
   );
 };

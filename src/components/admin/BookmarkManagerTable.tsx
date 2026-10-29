@@ -38,6 +38,7 @@ import {
   Archive,
 } from 'lucide-react';
 import { useToast } from '../Toast';
+import { ModalWrapper } from '../ModalWrapper';
 
 interface BookmarkManagerTableProps {
   bookmarks: Bookmark[];
@@ -844,12 +845,12 @@ export const BookmarkManagerTable: React.FC<BookmarkManagerTableProps> = ({
       {/* ======================================================== */}
       {/* Batch Dialog: Modify Category                            */}
       {/* ======================================================== */}
-      {batchActionType === 'category' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div
-            className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <ModalWrapper
+        isOpen={batchActionType === 'category'}
+        onClose={() => setBatchActionType(null)}
+        maxWidth="max-w-md"
+        className="p-6 space-y-4"
+      >
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <FolderInput className="w-4 h-4 text-neutral-500" />
               <span>批量修改分类目录（选定 {selectedArray.length} 项）</span>
@@ -893,19 +894,17 @@ export const BookmarkManagerTable: React.FC<BookmarkManagerTableProps> = ({
                 确认迁入
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </ModalWrapper>
 
       {/* ======================================================== */}
       {/* Batch Dialog: Add or Remove Tags                         */}
       {/* ======================================================== */}
-      {(batchActionType === 'add_tags' || batchActionType === 'remove_tags') && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div
-            className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <ModalWrapper
+        isOpen={batchActionType === 'add_tags' || batchActionType === 'remove_tags'}
+        onClose={() => setBatchActionType(null)}
+        maxWidth="max-w-md"
+        className="p-6 space-y-4"
+      >
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <Tag className="w-4 h-4 text-neutral-500" />
               <span>
@@ -949,19 +948,17 @@ export const BookmarkManagerTable: React.FC<BookmarkManagerTableProps> = ({
                 {batchActionType === 'add_tags' ? '确认追加' : '确认移除'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </ModalWrapper>
 
       {/* ======================================================== */}
       {/* Batch Dialog: Set Bookmark Color                         */}
       {/* ======================================================== */}
-      {batchActionType === 'color' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div
-            className="w-full max-w-md bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <ModalWrapper
+        isOpen={batchActionType === 'color'}
+        onClose={() => setBatchActionType(null)}
+        maxWidth="max-w-md"
+        className="p-6 space-y-4"
+      >
             <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
               <Palette className="w-4 h-4 text-neutral-500" />
               <span>批量设置标记颜色（选定 ${selectedArray.length} 项）</span>
@@ -1024,9 +1021,7 @@ export const BookmarkManagerTable: React.FC<BookmarkManagerTableProps> = ({
                 确认应用
               </button>
             </div>
-          </div>
-        </div>
-      )}
+      </ModalWrapper>
     </div>
   );
 };

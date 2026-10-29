@@ -32,6 +32,7 @@ interface BookmarkGroupViewProps {
   showOgImage?: boolean;
   onSelectCategory?: (categoryId: string) => void;
   isCompactMode?: boolean;
+  targetedCategoryId?: string | null;
 }
 
 // Droppable subcategory tab for horizontal filter row
@@ -207,11 +208,22 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
   showOgImage = true,
   onSelectCategory,
   isCompactMode = false,
+  targetedCategoryId = null,
 }) => {
   const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
   const [collapsedSubcategoryBars, setCollapsedSubcategoryBars] = useState<Record<string, boolean>>({});
   // Selected subcategories per root category: key = rootCat.id, value = subcategory IDs
   const [selectedSubcategories, setSelectedSubcategories] = useState<Record<string, string[]>>({});
+
+  // Auto-expand targeted category if it was collapsed
+  useEffect(() => {
+    if (targetedCategoryId) {
+      setCollapsedCategories((prev) => ({
+        ...prev,
+        [targetedCategoryId]: false,
+      }));
+    }
+  }, [targetedCategoryId]);
 
   const toggleCollapse = (catId: string) => {
     setCollapsedCategories((prev) => ({
@@ -315,7 +327,11 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
         const subBarCollapsed = isSubcategoryBarCollapsed(rootCat);
 
         return (
-          <section key={rootCat.id} className="space-y-4">
+          <section
+            key={rootCat.id}
+            id={`group-root-${rootCat.id}`}
+            className="space-y-4 scroll-mt-20"
+          >
             {/* 1st Level Category Header (Droppable) */}
             <DroppableRootHeader
               rootCat={rootCat}
@@ -456,7 +472,7 @@ export const BookmarkGroupView: React.FC<BookmarkGroupViewProps> = ({
 
       {/* Uncategorized section (only real uncategorized bookmarks without any valid category) */}
       {uncategorizedBookmarks.length > 0 && !activeCategoryId && (
-        <section className="space-y-4">
+        <section id="group-root-uncategorized" className="space-y-4 scroll-mt-20">
           <div className="flex items-center gap-2 pb-2 border-b border-neutral-200 dark:border-neutral-800">
             <Folder className="w-4 h-4 text-neutral-400" />
             <h2 className="text-base font-semibold text-neutral-900 dark:text-neutral-100">

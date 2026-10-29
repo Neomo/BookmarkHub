@@ -134,14 +134,16 @@ export const DailyPicksBanner: React.FC<DailyPicksBannerProps> = ({
   return (
     <div className="mb-6 rounded-2xl border border-neutral-200/90 dark:border-neutral-800 bg-linear-to-r from-amber-500/5 via-neutral-50 to-indigo-500/5 dark:from-amber-500/10 dark:via-neutral-900 dark:to-indigo-500/10 backdrop-blur-xs shadow-xs transition-all duration-200 overflow-hidden">
       {/* Banner Top Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-200/70 dark:border-neutral-800/80 bg-neutral-100/50 dark:bg-neutral-850/50">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-            <Sparkles className="w-3 h-3 fill-current animate-spin" style={{ animationDuration: '6s' }} />
+      <div className="flex items-center justify-between px-4 sm:px-5 py-2.5 border-b border-neutral-200/70 dark:border-neutral-800/80 bg-neutral-100/40 dark:bg-neutral-850/40">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-amber-600 dark:text-amber-400 uppercase">
+            <Sparkles className="w-3.5 h-3.5 fill-current text-amber-500" />
             <span>今日发现 · DAILY PICK</span>
           </span>
 
-          <span className="text-xs text-neutral-400 dark:text-neutral-500 hidden sm:inline-block">
+          <span className="h-3 w-px bg-neutral-300 dark:bg-neutral-700 hidden sm:inline-block" />
+
+          <span className="text-xs text-neutral-500 dark:text-neutral-400 hidden sm:inline-block">
             {isAllVisitedFallback
               ? '已阅完全部书签，今日温故知新'
               : `藏库中尚有 ${unvisitedBookmarks.length} 个未探索的网址`}
@@ -233,9 +235,9 @@ export const DailyPicksBanner: React.FC<DailyPicksBannerProps> = ({
                       key={tag}
                       type="button"
                       onClick={() => onSelectTag?.(tag)}
-                      className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800/90 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                      className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/80 dark:hover:bg-neutral-700 transition-colors cursor-pointer"
                     >
-                      <Tag className="w-2.5 h-2.5" />
+                      <Tag className="w-2.5 h-2.5 opacity-60" />
                       <span>{tag}</span>
                     </button>
                   ))}

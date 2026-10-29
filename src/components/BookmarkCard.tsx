@@ -269,7 +269,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
               }`}>
                 {domain}
               </span>
-              {/* Health status badge */}
+              {/* Health status indicator (quiet unboxed indicator with semantic dot) */}
               {bookmark.healthStatus && bookmark.healthStatus !== 'unknown' && (
                 <span
                   title={
@@ -281,14 +281,14 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
                       ? '健康检测中...'
                       : '链接异常或无法连接'
                   }
-                  className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.2 rounded-full font-mono transition-colors shrink-0 ${
+                  className={`inline-flex items-center gap-1 text-[10.5px] px-1.5 py-0.5 rounded font-mono transition-colors shrink-0 ${
                     bookmark.healthStatus === 'healthy'
-                      ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/60 dark:border-emerald-800/50'
+                      ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10'
                       : bookmark.healthStatus === 'warning'
-                      ? 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/50'
+                      ? 'text-amber-700 dark:text-amber-400 bg-amber-500/10'
                       : bookmark.healthStatus === 'checking'
-                      ? 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'
-                      : 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 border border-rose-200/60 dark:border-rose-800/50'
+                      ? 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800'
+                      : 'text-rose-700 dark:text-rose-400 bg-rose-500/10'
                   }`}
                 >
                   <span

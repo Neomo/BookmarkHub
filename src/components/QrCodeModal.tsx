@@ -21,6 +21,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { useToast } from './Toast';
+import { ModalWrapper } from './ModalWrapper';
 
 interface QrCodeModalProps {
   isOpen: boolean;
@@ -104,16 +105,15 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
     }
   }, [isOpen, bookmark, ticketTheme, showToast]);
 
-  if (!isOpen || !bookmark) return null;
-
-  const domain = extractDomain(bookmark.url);
+  const domain = bookmark ? extractDomain(bookmark.url) : '';
   const destinationCode = domain.split('.')[0].toUpperCase().slice(0, 4) || 'WEB';
 
   // Category breadcrumbs or name
-  const category = categories.find((c) => c.id === bookmark.categoryId);
+  const category = bookmark ? categories.find((c) => c.id === bookmark.categoryId) : undefined;
   const categoryName = category ? category.name : '默认收藏';
 
   const handleCopyUrl = () => {
+    if (!bookmark) return;
     navigator.clipboard.writeText(bookmark.url);
     setCopied(true);
     showToast('网址已复制到剪贴板', 'info');
@@ -122,6 +122,7 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
 
   // Canvas Fallback Export in case html-to-image hits sandbox or style issues
   const fallbackCanvasExport = async () => {
+    if (!bookmark) return;
     try {
       const canvas = document.createElement('canvas');
       const scale = 2;
@@ -346,7 +347,7 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
 
   // Main Export Function: Saves the ENTIRE ticket area as image
   const handleDownloadTicket = async () => {
-    if (!ticketRef.current) return;
+    if (!ticketRef.current || !bookmark) return;
     setIsExporting(true);
 
     try {
@@ -422,14 +423,15 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
   }[ticketTheme];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-sm animate-in fade-in overflow-y-auto"
-      onClick={onClose}
+    <ModalWrapper
+      isOpen={isOpen && Boolean(bookmark)}
+      onClose={onClose}
+      customCard={true}
+      maxWidth="max-w-sm sm:max-w-md"
+      className="relative my-auto"
     >
-      <div
-        className="relative w-full max-w-sm sm:max-w-md my-auto flex flex-col items-center"
-        onClick={(e) => e.stopPropagation()}
-      >
+      {bookmark && (
+        <div className="w-full flex flex-col items-center">
         {/* Top Floating Control Bar */}
         <div className="w-full flex items-center justify-between mb-3 px-1 text-white">
           <div className="flex items-center gap-2">
@@ -800,7 +802,8 @@ export const QrCodeModal: React.FC<QrCodeModalProps> = ({
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>
-      </div>
-    </div>
+        </div>
+      )}
+    </ModalWrapper>
   );
 };

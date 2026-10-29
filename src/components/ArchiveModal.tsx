@@ -19,6 +19,7 @@ import {
   Check,
   FolderInput,
 } from 'lucide-react';
+import { ModalWrapper } from './ModalWrapper';
 
 interface ArchiveModalProps {
   isOpen: boolean;
@@ -107,11 +108,13 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
     return `${days} 天前创建`;
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-2xl w-full border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-2xl"
+      className="max-h-[90vh]"
+    >
         {/* Header */}
         <div className="px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -425,7 +428,6 @@ export const ArchiveModal: React.FC<ArchiveModalProps> = ({
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };

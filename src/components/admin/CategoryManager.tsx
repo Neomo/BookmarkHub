@@ -48,6 +48,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useToast } from '../Toast';
+import { ModalWrapper } from '../ModalWrapper';
 
 interface CategoryManagerProps {
   categories: Category[];
@@ -682,12 +683,15 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
       {/* ======================================================== */}
       {/* 1. Modal: Add / Edit Category Dialog                     */}
       {/* ======================================================== */}
-      {(isAdding || editingCat) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div
-            className="w-full max-w-lg bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <ModalWrapper
+        isOpen={Boolean(isAdding || editingCat)}
+        onClose={() => {
+          setIsAdding(false);
+          setEditingCat(null);
+        }}
+        maxWidth="max-w-lg"
+        className="max-h-[90vh]"
+      >
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
               <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
@@ -911,19 +915,19 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </ModalWrapper>
 
       {/* ======================================================== */}
       {/* 2. Modal: Category Cover Studio                          */}
       {/* ======================================================== */}
-      {coverEditingCat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-          <div
-            className="w-full max-w-2xl bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <ModalWrapper
+        isOpen={Boolean(coverEditingCat)}
+        onClose={() => setCoverEditingCat(null)}
+        maxWidth="max-w-2xl"
+        className="max-h-[92vh]"
+      >
+        {coverEditingCat && (
+          <>
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
               <div className="flex items-center gap-2">
@@ -1218,9 +1222,9 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </ModalWrapper>
     </div>
   );
 };

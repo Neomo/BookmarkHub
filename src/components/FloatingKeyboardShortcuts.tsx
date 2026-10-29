@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Keyboard, X, Sparkles, Settings } from 'lucide-react';
 import { CustomShortcuts } from '../types';
 
@@ -57,65 +58,73 @@ export const FloatingKeyboardShortcuts: React.FC<FloatingKeyboardShortcutsProps>
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Popover Card */}
-      {(isOpen || isHovered) && (
-        <div className="absolute bottom-12 right-0 w-80 mb-2 p-4 rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/90 dark:border-neutral-800/90 shadow-2xl shadow-neutral-900/10 dark:shadow-neutral-950/60 transition-all duration-200 animate-in fade-in-50 zoom-in-95">
-          <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-100 dark:border-neutral-800">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center">
-                <Keyboard className="w-3.5 h-3.5" />
+      <AnimatePresence>
+        {(isOpen || isHovered) && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 6 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute bottom-12 right-0 w-80 mb-2 p-4 rounded-2xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md border border-neutral-200/90 dark:border-neutral-800/90 shadow-2xl shadow-neutral-900/10 dark:shadow-neutral-950/60"
+          >
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-100 dark:border-neutral-800">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 flex items-center justify-center">
+                  <Keyboard className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">快捷键指南</h4>
+                  <p className="text-[10px] text-neutral-400 dark:text-neutral-500">键盘快捷操作一览</p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">快捷键指南</h4>
-                <p className="text-[10px] text-neutral-400 dark:text-neutral-500">键盘快捷操作一览</p>
-              </div>
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  onClick={onOpenSettings}
+                  title="自定义全局快捷键"
+                  className="p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-xs flex items-center gap-1"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">自定义</span>
+                </button>
+              )}
             </div>
-            {onOpenSettings && (
-              <button
-                type="button"
-                onClick={onOpenSettings}
-                title="自定义全局快捷键"
-                className="p-1 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-xs flex items-center gap-1"
-              >
-                <Settings className="w-3.5 h-3.5" />
-                <span className="text-[11px]">自定义</span>
-              </button>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            {shortcutItems.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between py-1 text-xs">
-                <div className="flex flex-col">
-                  <span className="text-neutral-700 dark:text-neutral-300 font-medium text-[11px]">
-                    {item.label}
-                  </span>
-                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
-                    {item.desc}
-                  </span>
+            <div className="space-y-2">
+              {shortcutItems.map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between py-1 text-xs">
+                  <div className="flex flex-col">
+                    <span className="text-neutral-700 dark:text-neutral-300 font-medium text-[11px]">
+                      {item.label}
+                    </span>
+                    <span className="text-[10px] text-neutral-400 dark:text-neutral-500">
+                      {item.desc}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {item.keys.map((k, kIdx) => (
+                      <kbd
+                        key={kIdx}
+                        className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-mono font-semibold text-neutral-700 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded shadow-xs"
+                      >
+                        {k}
+                      </kbd>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  {item.keys.map((k, kIdx) => (
-                    <kbd
-                      key={kIdx}
-                      className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-mono font-semibold text-neutral-700 dark:text-neutral-200 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded shadow-xs"
-                    >
-                      {k}
-                    </kbd>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800 text-[10px] text-neutral-400 dark:text-neutral-500 flex items-center justify-between">
-            <span className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-500" />
-              支持系统设置中自定义组合键
-            </span>
-            <span>按 Esc 快速返回</span>
-          </div>
-        </div>
-      )}
+            <div className="mt-3 pt-2.5 border-t border-neutral-100 dark:border-neutral-800 text-[10px] text-neutral-400 dark:text-neutral-500 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                支持系统设置中自定义组合键
+              </span>
+              <span>按 Esc 快速返回</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Trigger Button */}
       <button

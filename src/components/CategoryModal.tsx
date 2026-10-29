@@ -15,6 +15,7 @@ import {
   FolderPlus,
 } from 'lucide-react';
 import { useToast } from './Toast';
+import { ModalWrapper } from './ModalWrapper';
 
 interface CategoryModalProps {
   isOpen: boolean;
@@ -51,7 +52,13 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const { showToast } = useToast();
 
-  if (!isOpen) return null;
+  React.useEffect(() => {
+    if (isOpen) {
+      setCatList(categories);
+      setEditingId(null);
+      setIsAdding(false);
+    }
+  }, [isOpen, categories]);
 
   // Root level categories (candidates to be parents)
   const rootCategories = catList.filter((c) => !c.parentId);
@@ -207,11 +214,12 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
   const categoryTree = buildCategoryTree(catList);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
-      <div
-        className="w-full max-w-xl bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-xl overflow-hidden flex flex-col max-h-[85vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <ModalWrapper
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth="max-w-xl"
+      className="max-h-[85vh]"
+    >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-neutral-800">
           <div className="flex items-center gap-2">
@@ -516,7 +524,6 @@ export const CategoryModal: React.FC<CategoryModalProps> = ({
             完成
           </button>
         </div>
-      </div>
-    </div>
+    </ModalWrapper>
   );
 };
