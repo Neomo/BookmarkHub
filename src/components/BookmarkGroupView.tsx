@@ -43,7 +43,7 @@ const DroppableSubcategoryTab: React.FC<{
   onToggle: () => void;
 }> = ({ sub, count, isSelected, onToggle }) => {
   const { setNodeRef, isOver } = useDroppable({
-    id: `droppable-category-${sub.id}`,
+    id: `droppable-category-groupsub-${sub.id}`,
     data: {
       type: 'category',
       categoryId: sub.id,
@@ -89,7 +89,7 @@ const DroppableRootHeader: React.FC<{
   onToggleCollapse: () => void;
 }> = ({ rootCat, totalCount, isCollapsed, onToggleCollapse }) => {
   const { setNodeRef, isOver } = useDroppable({
-    id: `droppable-category-${rootCat.id}`,
+    id: `droppable-category-group-${rootCat.id}`,
     data: {
       type: 'category',
       categoryId: rootCat.id,

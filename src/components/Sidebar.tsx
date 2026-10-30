@@ -88,7 +88,7 @@ const DroppableCategoryButton: React.FC<DroppableCategoryButtonProps> = ({
   return (
     <div
       ref={setNodeRef}
-      className="relative"
+      className="relative w-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -514,7 +514,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div key={parentCat.id} className="space-y-0.5">
                   <DroppableCategoryButton
                     category={parentCat}
-                    droppableId={`droppable-category-${parentCat.id}`}
+                    droppableId={isMobileView ? `droppable-category-mobile-${parentCat.id}` : `droppable-category-sidebar-${parentCat.id}`}
                     isSelected={isSelected}
                     count={cumulativeCount}
                     onSelect={() => {
@@ -538,7 +538,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           <DroppableCategoryButton
                             key={subCat.id}
                             category={subCat}
-                            droppableId={`droppable-category-${subCat.id}`}
+                            droppableId={isMobileView ? `droppable-category-mobile-${subCat.id}` : `droppable-category-sidebar-${subCat.id}`}
                             isSelected={isSubSelected}
                             count={subCount}
                             onSelect={() => {

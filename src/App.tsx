@@ -12,6 +12,7 @@ import {
   DragStartEvent,
   DragEndEvent,
   DragOverlay,
+  MeasuringStrategy,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -204,14 +205,31 @@ function BookmarkHubApp() {
   // or horizontal subcategory tabs always triggers accurately.
   // Fall back to closestCenter for smooth card sorting in grid.
   const customCollisionDetection: CollisionDetection = (args) => {
+    // 1. Pointer within collision: prioritize category targets (sidebar buttons, group headers/tabs)
     const pointerCollisions = pointerWithin(args);
     if (pointerCollisions.length > 0) {
+      const categoryCollision = pointerCollisions.find((c) =>
+        String(c.id).startsWith('droppable-category-')
+      );
+      if (categoryCollision) {
+        return [categoryCollision];
+      }
       return pointerCollisions;
     }
+
+    // 2. Rect intersection: prioritize category targets
     const rectCollisions = rectIntersection(args);
     if (rectCollisions.length > 0) {
+      const categoryCollision = rectCollisions.find((c) =>
+        String(c.id).startsWith('droppable-category-')
+      );
+      if (categoryCollision) {
+        return [categoryCollision];
+      }
       return rectCollisions;
     }
+
+    // 3. Fall back to closestCenter for card reordering
     return closestCenter(args);
   };
 
@@ -817,8 +835,8 @@ function BookmarkHubApp() {
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    // 1. Check if dropped onto a category in the sidebar!
-    const categoryDropMatch = overId.match(/^droppable-category-(?:mobile-)?(.+)$/);
+    // 1. Check if dropped onto a category target (sidebar button, group header, or subcategory tab)!
+    const categoryDropMatch = overId.match(/^droppable-category-(?:sidebar-|mobile-|group-|groupsub-|)(.+)$/);
     if (categoryDropMatch) {
       const targetCategoryId = categoryDropMatch[1];
       const targetCategory = categories.find((c) => c.id === targetCategoryId);
@@ -997,6 +1015,11 @@ function BookmarkHubApp() {
       <DndContext
         sensors={sensors}
         collisionDetection={customCollisionDetection}
+        measuring={{
+          droppable: {
+            strategy: MeasuringStrategy.Always,
+          },
+        }}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
