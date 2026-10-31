@@ -17,6 +17,7 @@ import {
   Maximize2,
   Minimize2,
   Shrink,
+  Compass,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -36,6 +37,7 @@ interface HeaderProps {
   onToggleFullscreen?: () => void;
   isCompactMode?: boolean;
   onToggleCompactMode?: () => void;
+  onOpenExplorationMode?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -55,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleFullscreen,
   isCompactMode = false,
   onToggleCompactMode,
+  onOpenExplorationMode,
 }) => {
   return (
     <header className="sticky top-0 z-30 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 md:gap-8">
@@ -150,6 +153,18 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Shrink className="w-3.5 h-3.5" />
             <span>紧凑</span>
+          </button>
+        )}
+
+        {onOpenExplorationMode && (
+          <button
+            type="button"
+            onClick={onOpenExplorationMode}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200/80 dark:border-indigo-800/60 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 hover:text-indigo-900 dark:hover:text-indigo-200 transition-all duration-150 whitespace-nowrap cursor-pointer text-xs font-semibold shadow-2xs hover:scale-102"
+            title="进入探索模式（全屏聚焦·随机漫游·纯粹浏览）"
+          >
+            <Compass className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>探索</span>
           </button>
         )}
 
@@ -262,6 +277,18 @@ export const Header: React.FC<HeaderProps> = ({
             title={isCompactMode ? '退出紧凑模式' : '切换紧凑模式'}
           >
             <Shrink className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Exploration Mode Button for Mobile */}
+        {onOpenExplorationMode && (
+          <button
+            type="button"
+            onClick={onOpenExplorationMode}
+            className="md:hidden p-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors"
+            title="进入探索模式"
+          >
+            <Compass className="w-4 h-4" />
           </button>
         )}
 

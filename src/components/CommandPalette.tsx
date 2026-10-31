@@ -15,6 +15,7 @@ import {
   Globe,
   CornerDownLeft,
   Archive,
+  Compass,
 } from 'lucide-react';
 import { ModalWrapper } from './ModalWrapper';
 
@@ -31,6 +32,7 @@ interface CommandPaletteProps {
   onOpenImportExportModal: () => void;
   onOpenArchiveModal?: () => void;
   onOpenAdmin?: (tab?: string) => void;
+  onOpenExplorationMode?: () => void;
   onToggleTheme: () => void;
   isDark: boolean;
 }
@@ -48,6 +50,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onOpenImportExportModal,
   onOpenArchiveModal,
   onOpenAdmin,
+  onOpenExplorationMode,
   onToggleTheme,
   isDark,
 }) => {
@@ -103,6 +106,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       category: '快捷操作',
       icon: ListPlus,
       action: onOpenBatchAddModal,
+    },
+    {
+      id: 'act-exploration',
+      title: '进入探索模式（全屏聚焦·随机漫游网址）',
+      category: '沉浸探索',
+      icon: Compass,
+      action: onOpenExplorationMode || (() => {}),
     },
     {
       id: 'act-cats',

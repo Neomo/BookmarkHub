@@ -56,6 +56,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { QrCodeModal } from './components/QrCodeModal';
 import { MobileNav } from './components/MobileNav';
 import { AdminDashboard, AdminTab } from './components/admin/AdminDashboard';
+import { ExplorationMode } from './components/ExplorationMode';
 import { FloatingKeyboardShortcuts } from './components/FloatingKeyboardShortcuts';
 import { ToastProvider, useToast } from './components/Toast';
 import {
@@ -81,6 +82,7 @@ function BookmarkHubApp() {
   });
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [adminInitialTab, setAdminInitialTab] = useState<AdminTab>('categories');
+  const [isExplorationMode, setIsExplorationMode] = useState(false);
 
   // View & Filter states
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -364,7 +366,8 @@ function BookmarkHubApp() {
         target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
       if (e.key === 'Escape') {
-        if (isAddEditOpen) setIsAddEditOpen(false);
+        if (isExplorationMode) setIsExplorationMode(false);
+        else if (isAddEditOpen) setIsAddEditOpen(false);
         else if (isBatchAddOpen) setIsBatchAddOpen(false);
         else if (isCategoryModalOpen) setIsCategoryModalOpen(false);
         else if (isStatsModalOpen) setIsStatsModalOpen(false);
@@ -986,6 +989,19 @@ function BookmarkHubApp() {
     );
   }
 
+  // Dedicated Exploration Mode: 仅显示网址列表与退出按钮，全屏聚焦动效，随机打乱填满视窗，点击分类图标聚焦该分类
+  if (isExplorationMode) {
+    return (
+      <ExplorationMode
+        bookmarks={bookmarks}
+        categories={categories}
+        onClose={() => setIsExplorationMode(false)}
+        onRecordClick={handleRecordClick}
+        openInNewTab={systemSettings.openInNewTab}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col font-sans canvas-ambient-light">
       {/* Top Bar Header */}
@@ -1009,6 +1025,7 @@ function BookmarkHubApp() {
         onToggleFullscreen={handleToggleFullscreen}
         isCompactMode={isCompactMode}
         onToggleCompactMode={handleToggleCompactMode}
+        onOpenExplorationMode={() => setIsExplorationMode(true)}
       />
 
       {/* DndContext wrapping both Sidebar and Main Viewport to enable cross-component drop */}
@@ -1587,6 +1604,7 @@ function BookmarkHubApp() {
         onOpenImportExportModal={() => setIsImportExportOpen(true)}
         onOpenArchiveModal={() => setIsArchiveModalOpen(true)}
         onOpenAdmin={(tab) => handleOpenAdmin((tab as AdminTab) || 'categories')}
+        onOpenExplorationMode={() => setIsExplorationMode(true)}
         onToggleTheme={handleToggleTheme}
         isDark={isDark}
       />
