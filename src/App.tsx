@@ -1544,6 +1544,7 @@ function BookmarkHubApp() {
         categories={categories}
         availableTags={allTags}
         initialCategoryId={activeCategoryId || undefined}
+        showCardOgImage={systemSettings.showCardOgImage ?? true}
       />
 
       <BatchAddModal

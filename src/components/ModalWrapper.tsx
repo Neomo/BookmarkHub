@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'motion/react';
 export interface ModalWrapperProps {
   isOpen: boolean;
   onClose: () => void;
+  onBackdropClick?: () => void;
+  closeOnBackdropClick?: boolean;
   children: React.ReactNode;
   maxWidth?: string;
   className?: string;
@@ -17,6 +19,8 @@ export interface ModalWrapperProps {
 export const ModalWrapper: React.FC<ModalWrapperProps> = ({
   isOpen,
   onClose,
+  onBackdropClick,
+  closeOnBackdropClick = true,
   children,
   maxWidth = 'max-w-lg',
   className = '',
@@ -26,17 +30,26 @@ export const ModalWrapper: React.FC<ModalWrapperProps> = ({
   zIndex = 'z-50',
   customCard = false,
 }) => {
+  // Backdrop and ESC handler
+  const handleBackdrop = () => {
+    if (onBackdropClick) {
+      onBackdropClick();
+    } else if (closeOnBackdropClick !== false) {
+      onClose();
+    }
+  };
+
   // ESC key listener to gracefully dismiss modal
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        handleBackdrop();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, onBackdropClick, closeOnBackdropClick]);
 
   // Lock body scroll when modal is active to prevent awkward background scrolling
   useEffect(() => {
@@ -60,7 +73,7 @@ export const ModalWrapper: React.FC<ModalWrapperProps> = ({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
           className={`fixed inset-0 ${zIndex} overflow-y-auto overflow-x-hidden p-3 sm:p-4 bg-neutral-950/60 dark:bg-black/75 backdrop-blur-md`}
-          onClick={onClose}
+          onClick={handleBackdrop}
         >
           <div
             className={`min-h-full flex justify-center w-full ${
