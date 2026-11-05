@@ -54,16 +54,26 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
     const w = window.innerWidth;
     const h = window.innerHeight;
 
-    let cols = 1;
-    if (w >= 1280) cols = 4;
-    else if (w >= 1024) cols = 3;
-    else if (w >= 640) cols = 2;
-    else cols = 1;
+    let cols = 2; // Default 2 columns on mobile
+    let itemHeight = 44; // Compact item height on mobile
 
-    // Top bar is ~56px, container vertical padding is ~48px
-    // Each bookmark row is approx 48px height + 14px gap = 62px
-    const availableHeight = h - 110;
-    const rows = Math.max(3, Math.floor(availableHeight / 62));
+    if (w >= 1280) {
+      cols = 4;
+      itemHeight = 56;
+    } else if (w >= 1024) {
+      cols = 3;
+      itemHeight = 56;
+    } else if (w >= 640) {
+      cols = 2;
+      itemHeight = 52;
+    } else {
+      cols = 2; // 手机端2列
+      itemHeight = 44; // 紧凑高度 (缩小宽高)
+    }
+
+    // Top bar is ~48px on mobile / 56px on desktop, padding is ~20px on mobile
+    const availableHeight = Math.max(200, h - 86);
+    const rows = Math.max(4, Math.floor(availableHeight / itemHeight));
     return cols * rows;
   }, []);
 
@@ -215,19 +225,19 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
       {/* ========================================================
           2. Minimalist Header: Only Exit Button & Category Indicator
       ======================================================== */}
-      <header className="h-14 shrink-0 px-4 sm:px-8 border-b border-neutral-800/80 bg-neutral-900/80 backdrop-blur-md flex items-center justify-between gap-3">
+      <header className="h-12 sm:h-14 shrink-0 px-3 sm:px-8 border-b border-neutral-800/80 bg-neutral-900/80 backdrop-blur-md flex items-center justify-between gap-2">
         {/* Left: Exploration Mode Title & Focused Category Badge */}
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex items-center gap-2 text-indigo-400 shrink-0">
-            <Compass className="w-5 h-5 animate-spin-slow" />
-            <span className="font-bold text-sm tracking-tight text-white">探索模式</span>
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-indigo-400 shrink-0">
+            <Compass className="w-4 h-4 sm:w-5 sm:h-5 animate-spin-slow" />
+            <span className="font-bold text-xs sm:text-sm tracking-tight text-white">探索模式</span>
           </div>
 
           {activeCategory ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-950/70 border border-indigo-700/60 text-xs text-indigo-200 truncate">
-              <span className="text-neutral-400 text-[11px]">聚焦目录:</span>
+            <div className="flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg bg-indigo-950/70 border border-indigo-700/60 text-[11px] sm:text-xs text-indigo-200 truncate">
+              <span className="text-neutral-400 text-[10px] hidden sm:inline">聚焦:</span>
               <div
-                className="w-4 h-4 rounded-sm flex items-center justify-center shrink-0"
+                className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-xs flex items-center justify-center shrink-0"
                 style={{
                   backgroundColor: hexToRgba(activeCategory.color || '#6366f1', 0.25),
                   color: activeCategory.color || '#6366f1',
@@ -235,14 +245,14 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
               >
                 <CategoryIcon name={activeCategory.icon} className="w-2.5 h-2.5" />
               </div>
-              <span className="font-semibold truncate max-w-32 sm:max-w-48">{activeCategory.name}</span>
+              <span className="font-semibold truncate max-w-20 sm:max-w-48">{activeCategory.name}</span>
               <button
                 type="button"
                 onClick={handleClearCategoryFilter}
-                className="ml-1 p-0.5 hover:bg-indigo-800/60 rounded text-indigo-300 hover:text-white transition-colors cursor-pointer"
+                className="ml-0.5 p-0.5 hover:bg-indigo-800/60 rounded text-indigo-300 hover:text-white transition-colors cursor-pointer"
                 title="返回全部目录随机漫游"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
           ) : (
@@ -253,15 +263,15 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
         </div>
 
         {/* Right: Refresh/Shuffle & Exit Exploration Mode */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Shuffle / 换一批 */}
           <button
             type="button"
             onClick={() => setRandomSeed((prev) => prev + 1)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-850 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-750 transition-colors text-xs font-medium cursor-pointer"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg bg-neutral-850 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-750 transition-colors text-xs font-medium cursor-pointer"
             title="重新打乱，换一批随机网址 (快捷键 R)"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
             <span className="hidden sm:inline">换一批</span>
           </button>
 
@@ -269,7 +279,7 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-900 font-semibold text-xs transition-colors shadow-sm cursor-pointer"
+            className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg bg-white hover:bg-neutral-100 text-neutral-900 font-semibold text-xs transition-colors shadow-sm cursor-pointer"
             title="退出探索模式 (快捷键 Esc)"
           >
             <span>退出探索模式</span>
@@ -281,13 +291,13 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
       </header>
 
       {/* ========================================================
-          3. Bookmark List Area (仅显示网址列表，每条列表宽度一致)
+          3. Bookmark List Area (手机端一行显示2列，尺寸缩小更紧凑)
       ======================================================== */}
-      <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6 flex flex-col justify-center">
+      <main className="flex-1 overflow-y-auto px-2.5 sm:px-8 py-2.5 sm:py-6 flex flex-col justify-start sm:justify-center">
         <div className="max-w-7xl mx-auto w-full">
           {displayedBookmarks.length > 0 ? (
-            /* Equal-width responsive CSS Grid: guarantees exact identical pixel width for every item */
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-3.5 w-full">
+            /* Equal-width responsive CSS Grid: 2 columns on mobile, 3 on md, 4 on xl */
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 w-full">
               {displayedBookmarks.map((bm) => {
                 const cat = categoryMap.get(bm.categoryId);
                 const catColor = cat?.color || '#6366f1';
@@ -296,7 +306,7 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
                   <div
                     key={bm.id}
                     onClick={() => handleOpenBookmark(bm)}
-                    className="w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl bg-neutral-900/90 hover:bg-neutral-850 border border-neutral-800/90 hover:border-indigo-500/60 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-150 group cursor-pointer"
+                    className="w-full flex items-center justify-between gap-1.5 sm:gap-2.5 px-2 py-1.5 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl bg-neutral-900/90 hover:bg-neutral-850 border border-neutral-800/90 hover:border-indigo-500/60 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-150 group cursor-pointer min-h-[38px] sm:min-h-[46px]"
                   >
                     {/* Element 1: Category Icon (Clickable to filter exploration by this category) */}
                     <button
@@ -305,30 +315,30 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
                         e.stopPropagation();
                         handleSelectCategory(bm.categoryId);
                       }}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 active:scale-95 shadow-2xs hover:ring-2 hover:ring-indigo-400"
+                      className="w-6 h-6 sm:w-7 sm:h-7 rounded-md sm:rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 active:scale-95 shadow-2xs hover:ring-2 hover:ring-indigo-400"
                       style={{
                         backgroundColor: hexToRgba(catColor, 0.18),
                         color: catColor,
                       }}
                       title={`分类：${cat?.name || '未分类'} · 点击仅看此分类下的随机网址`}
                     >
-                      <CategoryIcon name={cat?.icon} className="w-4 h-4" />
+                      <CategoryIcon name={cat?.icon} className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </button>
 
                     {/* Element 2: Website Title (Center, uniform truncation) */}
                     <span
-                      className="truncate flex-1 text-sm font-medium text-neutral-200 group-hover:text-indigo-300 transition-colors"
+                      className="truncate flex-1 text-xs sm:text-sm font-medium text-neutral-200 group-hover:text-indigo-300 transition-colors leading-tight"
                       title={bm.title}
                     >
                       {bm.title}
                     </span>
 
                     {/* Element 3: Star Status (Right) */}
-                    <div className="shrink-0 flex items-center justify-center w-5 h-5">
+                    <div className="shrink-0 flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4">
                       {bm.isStarred ? (
-                        <Star className="w-4 h-4 fill-amber-400 text-amber-400 drop-shadow-2xs" />
+                        <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-amber-400 text-amber-400 drop-shadow-2xs" />
                       ) : (
-                        <Star className="w-4 h-4 text-neutral-700 group-hover:text-neutral-600 transition-colors" />
+                        <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neutral-700 group-hover:text-neutral-600 transition-colors" />
                       )}
                     </div>
                   </div>

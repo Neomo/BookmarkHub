@@ -60,14 +60,14 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenExplorationMode,
 }) => {
   return (
-    <header className="sticky top-0 z-30 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 md:gap-8">
-      {/* Zone 1: Single element brand wordmark */}
-      <div className="flex items-center gap-2.5 shrink-0">
+    <header className="sticky top-0 z-30 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-start sm:justify-between gap-1.5 sm:gap-4 md:gap-8">
+      {/* Zone 1: Single element brand wordmark (Title hidden on mobile) */}
+      <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         {!isFullscreen && (
           <button
             type="button"
             onClick={onToggleSidebarMobile}
-            className="md:hidden p-1.5 -ml-1 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="md:hidden p-1.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800"
             title="切换侧边栏"
           >
             <Menu className="w-5 h-5" />
@@ -80,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
             e.preventDefault();
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
-          className="flex items-center gap-2 text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100 whitespace-nowrap shrink-0 hover:opacity-90"
+          className="hidden sm:flex items-center gap-2 text-base font-bold tracking-tight text-neutral-900 dark:text-neutral-100 whitespace-nowrap shrink-0 hover:opacity-90"
         >
           <div className="w-7 h-7 rounded-lg bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 flex items-center justify-center shrink-0">
             <Bookmark className="w-4 h-4 fill-current" />
@@ -222,20 +222,48 @@ export const Header: React.FC<HeaderProps> = ({
         )}
       </nav>
 
-      {/* Zone 3: Search trigger & Controls (Fullscreen button, Theme, Add) */}
-      <div className="flex items-center gap-2 shrink-0">
+      {/* Zone 3: Search trigger & Controls (Shifted left on mobile, right on desktop) */}
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0 sm:ml-auto">
         <button
           type="button"
           onClick={onOpenCommandPalette}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-xs"
+          className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-xs"
           title="搜索网址与操作 (Ctrl+K)"
         >
-          <Search className="w-3.5 h-3.5" />
+          <Search className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
           <span className="hidden sm:inline">搜索...</span>
           <kbd className="hidden sm:inline-block px-1 text-[10px] font-mono bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded">
             ⌘K
           </kbd>
         </button>
+
+        {/* Exploration Mode Button for Mobile */}
+        {onOpenExplorationMode && (
+          <button
+            type="button"
+            onClick={onOpenExplorationMode}
+            className="md:hidden p-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors"
+            title="进入探索模式"
+          >
+            <Compass className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Compact Mode Toggle for Mobile */}
+        {onToggleCompactMode && (
+          <button
+            type="button"
+            onClick={onToggleCompactMode}
+            className={`md:hidden p-1.5 rounded-lg transition-colors ${
+              isCompactMode
+                ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 ring-1 ring-indigo-500/40'
+                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            }`}
+            title={isCompactMode ? '退出紧凑模式' : '切换紧凑模式'}
+          >
+            <Shrink className="w-4 h-4" />
+          </button>
+        )}
 
         {!isFullscreen && onOpenAdmin && (
           <button
@@ -264,34 +292,6 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Compact Mode Toggle for Mobile */}
-        {onToggleCompactMode && (
-          <button
-            type="button"
-            onClick={onToggleCompactMode}
-            className={`md:hidden p-1.5 rounded-lg transition-colors ${
-              isCompactMode
-                ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 ring-1 ring-indigo-500/40'
-                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-            }`}
-            title={isCompactMode ? '退出紧凑模式' : '切换紧凑模式'}
-          >
-            <Shrink className="w-4 h-4" />
-          </button>
-        )}
-
-        {/* Exploration Mode Button for Mobile */}
-        {onOpenExplorationMode && (
-          <button
-            type="button"
-            onClick={onOpenExplorationMode}
-            className="md:hidden p-1.5 text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors"
-            title="进入探索模式"
-          >
-            <Compass className="w-4 h-4" />
-          </button>
-        )}
-
         <button
           type="button"
           onClick={onToggleTheme}
@@ -301,10 +301,11 @@ export const Header: React.FC<HeaderProps> = ({
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
+        {/* Add Bookmark button: Hidden on mobile since mobile nav has it */}
         <button
           type="button"
           onClick={onOpenAddModal}
-          className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors whitespace-nowrap shrink-0 shadow-xs"
+          className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-neutral-900 dark:bg-neutral-100 dark:text-neutral-900 rounded-lg hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors whitespace-nowrap shrink-0 shadow-xs"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>添加网址</span>
