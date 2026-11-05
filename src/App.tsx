@@ -20,7 +20,7 @@ import {
   sortableKeyboardCoordinates,
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
-import { Bookmark, Category, ViewMode, SortOption, SystemSettings } from './types';
+import { Bookmark, Category, ViewMode, SortOption, SystemSettings, UIThemeStyle } from './types';
 import {
   loadBookmarks,
   saveBookmarks,
@@ -257,6 +257,46 @@ function BookmarkHubApp() {
     }
   };
 
+  // UI Theme Style: 'modern' | 'looseleaf' (Inspired by kevintngo/looseleaf)
+  const [themeStyle, setThemeStyle] = useState<UIThemeStyle>(() => {
+    if (typeof window !== 'undefined') {
+      const savedSettings = loadSystemSettings();
+      if (savedSettings.themeStyle) return savedSettings.themeStyle;
+      const saved = localStorage.getItem('bookmarkhub_theme_style') as UIThemeStyle | null;
+      if (saved && (saved === 'modern' || saved === 'looseleaf')) return saved;
+    }
+    return 'modern';
+  });
+
+  const applyThemeStyle = (style: UIThemeStyle) => {
+    setThemeStyle(style);
+    if (typeof document !== 'undefined') {
+      if (style === 'looseleaf') {
+        document.documentElement.setAttribute('data-theme', 'looseleaf');
+        document.documentElement.classList.add('theme-looseleaf');
+        localStorage.setItem('bookmarkhub_theme_style', 'looseleaf');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        document.documentElement.classList.remove('theme-looseleaf');
+        localStorage.setItem('bookmarkhub_theme_style', 'modern');
+      }
+    }
+  };
+
+  const handleToggleThemeStyle = () => {
+    const nextStyle: UIThemeStyle = themeStyle === 'looseleaf' ? 'modern' : 'looseleaf';
+    applyThemeStyle(nextStyle);
+    const updatedSettings: SystemSettings = { ...systemSettings, themeStyle: nextStyle };
+    setSystemSettings(updatedSettings);
+    saveSystemSettings(updatedSettings);
+    showToast(
+      nextStyle === 'looseleaf'
+        ? '已切换到「Looseleaf 手绘活页纸」主题风格'
+        : '已切换回「现代极简」主题风格',
+      'success'
+    );
+  };
+
   // Load initial data on mount:
   // 1. If local storage already has saved data, uses local updated data.
   // 2. If first time open (no local data), loads from linksconfig.json in system directory.
@@ -316,6 +356,7 @@ function BookmarkHubApp() {
       }
 
       applyThemeMode(loadedSettings.defaultTheme);
+      applyThemeStyle(loadedSettings.themeStyle || 'modern');
       setIsLoaded(true);
 
       if (initialData.source === 'linksconfig') {
@@ -475,6 +516,9 @@ function BookmarkHubApp() {
     setSystemSettings(newSettings);
     saveSystemSettings(newSettings);
     applyThemeMode(newSettings.defaultTheme);
+    if (newSettings.themeStyle) {
+      applyThemeStyle(newSettings.themeStyle);
+    }
     setViewMode(newSettings.defaultViewMode);
     localStorage.setItem('bookmarkhub_view_mode', newSettings.defaultViewMode);
   };
@@ -960,6 +1004,8 @@ function BookmarkHubApp() {
           }}
           onShowQrCode={handleShowQrCode}
           initialTab={adminInitialTab}
+          themeStyle={themeStyle}
+          onApplyThemeStyle={applyThemeStyle}
         />
 
         {/* Modal overlays accessible from admin */}
@@ -1026,6 +1072,8 @@ function BookmarkHubApp() {
         isCompactMode={isCompactMode}
         onToggleCompactMode={handleToggleCompactMode}
         onOpenExplorationMode={() => setIsExplorationMode(true)}
+        themeStyle={themeStyle}
+        onToggleThemeStyle={handleToggleThemeStyle}
       />
 
       {/* DndContext wrapping both Sidebar and Main Viewport to enable cross-component drop */}

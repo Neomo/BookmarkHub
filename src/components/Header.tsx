@@ -18,6 +18,7 @@ import {
   Minimize2,
   Shrink,
   Compass,
+  Palette,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -38,6 +39,8 @@ interface HeaderProps {
   isCompactMode?: boolean;
   onToggleCompactMode?: () => void;
   onOpenExplorationMode?: () => void;
+  themeStyle?: 'modern' | 'looseleaf';
+  onToggleThemeStyle?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -58,6 +61,8 @@ export const Header: React.FC<HeaderProps> = ({
   isCompactMode = false,
   onToggleCompactMode,
   onOpenExplorationMode,
+  themeStyle = 'modern',
+  onToggleThemeStyle,
 }) => {
   return (
     <header className="sticky top-0 z-30 h-14 border-b border-neutral-200 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-start sm:justify-between gap-1.5 sm:gap-4 md:gap-8">
@@ -289,6 +294,28 @@ export const Header: React.FC<HeaderProps> = ({
             title={isFullscreen ? '退出全屏专注模式 (Esc)' : '切换全屏专注模式'}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        )}
+
+        {onToggleThemeStyle && (
+          <button
+            type="button"
+            onClick={onToggleThemeStyle}
+            className={`p-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+              themeStyle === 'looseleaf'
+                ? 'text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/70 ring-1 ring-amber-400/60 font-semibold shadow-2xs'
+                : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+            }`}
+            title={
+              themeStyle === 'looseleaf'
+                ? '当前为手绘活页纸主题 (Looseleaf)，点击切换回现代极简风格'
+                : '点击切换到手绘活页纸主题 (Looseleaf 手绘纸笔风)'
+            }
+          >
+            <Palette className="w-4 h-4" />
+            <span className="hidden xl:inline text-xs font-medium">
+              {themeStyle === 'looseleaf' ? '活页手绘' : '现代极简'}
+            </span>
           </button>
         )}
 

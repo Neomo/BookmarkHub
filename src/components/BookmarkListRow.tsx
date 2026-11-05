@@ -77,7 +77,7 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
       <motion.div
         whileTap={{ scale: 0.995 }}
         onClick={handleRowClick}
-        className={`group relative flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg border transition-all duration-150 cursor-pointer ${
+        className={`bookmark-list-row group relative flex items-center justify-between gap-2.5 px-3 py-2 rounded-lg border transition-all duration-150 cursor-pointer ${
           bookmark.isPinned
             ? 'bg-neutral-50/90 dark:bg-neutral-800/60 border-neutral-300 dark:border-neutral-700'
             : 'bg-white dark:bg-neutral-900 border-neutral-200/80 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
@@ -207,7 +207,7 @@ export const BookmarkListRow: React.FC<BookmarkListRowProps> = ({
     <motion.div
       whileTap={{ scale: 0.997 }}
       onClick={handleRowClick}
-      className={`group relative flex items-center justify-between gap-3 px-3 sm:px-4 py-2.5 border-b border-neutral-100 dark:border-neutral-800/80 transition-all duration-150 cursor-pointer ${
+      className={`bookmark-list-row group relative flex items-center justify-between gap-3 px-3 sm:px-4 py-2.5 border-b border-neutral-100 dark:border-neutral-800/80 transition-all duration-150 cursor-pointer ${
         bookmark.isPinned
           ? 'bg-neutral-50/80 dark:bg-neutral-800/40 hover:bg-neutral-100/70 dark:hover:bg-neutral-800/60'
           : 'bg-white dark:bg-[#14171d] hover:bg-neutral-50/70 dark:hover:bg-neutral-800/40'

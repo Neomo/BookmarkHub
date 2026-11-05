@@ -61,6 +61,7 @@ export interface ImportDiff {
 }
 
 export type ThemeMode = 'light' | 'dark' | 'system';
+export type UIThemeStyle = 'modern' | 'looseleaf';
 
 export interface ExportData {
   version: string;
@@ -88,6 +89,7 @@ export interface SystemSettings {
   autoArchiveMonths: number;
   customShortcuts?: CustomShortcuts;
   showCardOgImage?: boolean;
+  themeStyle?: UIThemeStyle;
 }
 
 export interface SystemConfigBackup {

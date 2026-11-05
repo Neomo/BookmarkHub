@@ -306,7 +306,7 @@ export const ExplorationMode: React.FC<ExplorationModeProps> = ({
                   <div
                     key={bm.id}
                     onClick={() => handleOpenBookmark(bm)}
-                    className="w-full flex items-center justify-between gap-1.5 sm:gap-2.5 px-2 py-1.5 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl bg-neutral-900/90 hover:bg-neutral-850 border border-neutral-800/90 hover:border-indigo-500/60 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-150 group cursor-pointer min-h-[38px] sm:min-h-[46px]"
+                    className="exploration-card w-full flex items-center justify-between gap-1.5 sm:gap-2.5 px-2 py-1.5 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl bg-neutral-900/90 hover:bg-neutral-850 border border-neutral-800/90 hover:border-indigo-500/60 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-150 group cursor-pointer min-h-[38px] sm:min-h-[46px]"
                   >
                     {/* Element 1: Category Icon (Clickable to filter exploration by this category) */}
                     <button

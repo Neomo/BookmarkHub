@@ -14,6 +14,8 @@ import {
   Check,
   FolderTree,
   Image as ImageIcon,
+  Palette,
+  FileText,
 } from 'lucide-react';
 import { useToast } from '../Toast';
 
@@ -22,6 +24,8 @@ interface PageSettingsProps {
   onUpdateSettings: (newSettings: SystemSettings) => void;
   currentTheme: ThemeMode;
   onApplyTheme: (theme: ThemeMode) => void;
+  themeStyle?: 'modern' | 'looseleaf';
+  onApplyThemeStyle?: (style: 'modern' | 'looseleaf') => void;
 }
 
 export const PageSettings: React.FC<PageSettingsProps> = ({
@@ -29,6 +33,8 @@ export const PageSettings: React.FC<PageSettingsProps> = ({
   onUpdateSettings,
   currentTheme,
   onApplyTheme,
+  themeStyle = 'modern',
+  onApplyThemeStyle,
 }) => {
   const { showToast } = useToast();
 
@@ -40,6 +46,9 @@ export const PageSettings: React.FC<PageSettingsProps> = ({
     onUpdateSettings(updated);
     if (key === 'defaultTheme') {
       onApplyTheme(value as ThemeMode);
+    }
+    if (key === 'themeStyle') {
+      onApplyThemeStyle?.(value as 'modern' | 'looseleaf');
     }
     showToast('偏好设置已保存并生效', 'success');
   };
@@ -53,11 +62,85 @@ export const PageSettings: React.FC<PageSettingsProps> = ({
           <span>页面显示与系统偏好设置</span>
         </h2>
         <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-          配置系统默认色彩主题、默认主视图、今日发现推荐横幅开关及浏览行为
+          配置系统视觉设计风格、默认色彩主题、默认主视图、今日发现推荐横幅开关及浏览行为
         </p>
       </div>
 
       <div className="space-y-5">
+        {/* 0. UI Theme Style (Modern vs Looseleaf Hand-Drawn Paper) */}
+        <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-1.5">
+                <Palette className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
+                <span>界面视觉风格设计 (UI Theme Style)</span>
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                支持标准现代极简设计与 Looseleaf 手绘活页本两种全套界面皮肤
+              </p>
+            </div>
+            {settings.themeStyle === 'looseleaf' && (
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                手绘活页风激活中
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {[
+              {
+                id: 'modern',
+                label: '现代极简风格 (Modern Clean)',
+                desc: '精致严谨的现代卡片排版、规整布局与流畅阴影',
+                accentBadge: '默认高质感',
+                icon: FileText,
+              },
+              {
+                id: 'looseleaf',
+                label: '活页手绘纸风 (Looseleaf Paper)',
+                desc: '来自 kevintngo/looseleaf 的手绘铅笔纸张、纸质肌理、和纸胶带与荧光笔批注',
+                accentBadge: '手绘纸笔质感',
+                icon: Palette,
+              },
+            ].map((style) => {
+              const isSelected = (settings.themeStyle || 'modern') === style.id;
+              const IconComp = style.icon;
+
+              return (
+                <button
+                  key={style.id}
+                  type="button"
+                  onClick={() => handleUpdate('themeStyle', style.id as 'modern' | 'looseleaf')}
+                  className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between h-28 ${
+                    isSelected
+                      ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-50 dark:bg-neutral-850 ring-1 ring-neutral-900 dark:ring-neutral-100 shadow-xs'
+                      : 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <IconComp className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-200/60 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-medium">
+                        {style.accentBadge}
+                      </span>
+                    </div>
+                    {isSelected && <Check className="w-4 h-4 text-neutral-900 dark:text-neutral-100" />}
+                  </div>
+
+                  <div>
+                    <div className="font-semibold text-xs text-neutral-900 dark:text-neutral-100">
+                      {style.label}
+                    </div>
+                    <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
+                      {style.desc}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* 1. Default Theme Mode (4.1) */}
         <div className="p-4 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 space-y-3 shadow-xs">
           <div>

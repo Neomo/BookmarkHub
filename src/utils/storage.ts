@@ -1039,6 +1039,7 @@ export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = {
   autoArchiveMonths: 6,
   customShortcuts: DEFAULT_CUSTOM_SHORTCUTS,
   showCardOgImage: true,
+  themeStyle: 'modern',
 };
 
 export function loadSystemSettings(): SystemSettings {
@@ -1049,6 +1050,7 @@ export function loadSystemSettings(): SystemSettings {
       return {
         ...DEFAULT_SYSTEM_SETTINGS,
         ...parsed,
+        themeStyle: parsed.themeStyle === 'looseleaf' ? 'looseleaf' : 'modern',
         showCardOgImage:
           parsed.showCardOgImage !== undefined
             ? Boolean(parsed.showCardOgImage)

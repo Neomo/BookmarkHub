@@ -193,7 +193,7 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
       transition={{ type: 'spring', stiffness: 450, damping: 25 }}
       onClick={handleCardClick}
       style={cardCustomStyle}
-      className={`group relative flex flex-col justify-between ${
+      className={`bookmark-card group relative flex flex-col justify-between ${
         isCompact ? 'p-3 sm:p-3.5 rounded-xl min-h-[96px]' : 'p-4 rounded-xl min-h-[140px]'
       } border cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-md dark:hover:shadow-neutral-950/60 ${
         menuOpen ? 'z-40 ring-1 ring-neutral-300 dark:ring-neutral-700' : ''
@@ -209,6 +209,9 @@ export const BookmarkCard: React.FC<BookmarkCardProps> = ({
         isDragging ? 'opacity-40 scale-[0.98] shadow-lg ring-2 ring-neutral-400 dark:ring-neutral-600 z-30' : ''
       }`}
     >
+      {/* Washi Tape Accent for Looseleaf theme */}
+      <span className="ll-tape-strip pointer-events-none" aria-hidden="true" />
+
       {/* Top accent line if bookmark has color */}
       {bookmark.color && (
         <div

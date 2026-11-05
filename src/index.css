@@ -60,3 +60,245 @@
     radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.03) 0px, transparent 50%);
 }
 
+/* ==========================================================================
+   LOOSELEAF THEME: Hand-Drawn Paper & Sketchbook Design System
+   Inspired by https://github.com/kevintngo/looseleaf
+   ========================================================================== */
+
+:root[data-theme="looseleaf"],
+.theme-looseleaf {
+  --ll-desk: #f3efe6;
+  --ll-desk-deep: #e5dfd2;
+  --ll-paper: #fefbf5;
+  --ll-paper-shade: #eee8d8;
+  --ll-slip: #fffdf9;
+  --ll-card: #fffdf7;
+  --ll-graph: #f5f8f0;
+  --ll-pad: #fcf6e7;
+  --ll-ink: #2a231d;
+  --ll-ink-soft: #4a423a;
+  --ll-ink-muted: #6b6359;
+  --ll-ink-you: #2b4e99;
+  --ll-pencil: #6c655b;
+  --ll-pencil-mark: #322b24;
+  --ll-red: #c2412d;
+  --ll-green: #3b7a4b;
+  --ll-marker: #df6b3c;
+  --ll-hi: #f9e25b;
+  --ll-hi-deep: #a87f0c;
+  --ll-focus: #2c4f9e;
+  --ll-tape: rgba(246, 240, 222, 0.9);
+  --ll-tape-edge: rgba(140, 134, 115, 0.45);
+  
+  --ll-shadow-card: 3px 4px 0px var(--ll-ink);
+  --ll-shadow-hover: 4px 6px 0px var(--ll-ink);
+  --ll-shadow-btn: 2px 3px 0px var(--ll-ink);
+  --ll-shadow-chip: 1.5px 2px 0px var(--ll-ink);
+}
+
+.dark:root[data-theme="looseleaf"],
+:root[data-theme="looseleaf"].dark,
+.dark.theme-looseleaf,
+.dark [data-theme="looseleaf"] {
+  --ll-desk: #17201c;
+  --ll-desk-deep: #111714;
+  --ll-paper: #222d27;
+  --ll-paper-shade: #1a231e;
+  --ll-slip: #26332c;
+  --ll-card: #202b25;
+  --ll-pad: #232f28;
+  --ll-ink: #f5eedf;
+  --ll-ink-soft: #dcd3c2;
+  --ll-ink-muted: #aca391;
+  --ll-ink-you: #8cb0f0;
+  --ll-pencil: #a8a092;
+  --ll-pencil-mark: #ded4c3;
+  --ll-red: #e85542;
+  --ll-green: #52a366;
+  --ll-marker: #f28253;
+  --ll-hi: #d9bf34;
+  --ll-hi-deep: #f5d64e;
+  --ll-focus: #8cb0f0;
+  --ll-tape: rgba(45, 58, 52, 0.9);
+  --ll-tape-edge: rgba(100, 118, 108, 0.5);
+
+  --ll-shadow-card: 3px 4px 0px #0b0f0d;
+  --ll-shadow-hover: 4px 6px 0px #0b0f0d;
+  --ll-shadow-btn: 2px 3px 0px #0b0f0d;
+  --ll-shadow-chip: 1.5px 2px 0px #0b0f0d;
+}
+
+/* Looseleaf Base Typography and Canvas */
+[data-theme="looseleaf"],
+[data-theme="looseleaf"] body {
+  font-family: 'Shantell Sans', 'Patrick Hand', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif !important;
+}
+
+[data-theme="looseleaf"] body {
+  background-color: var(--ll-desk) !important;
+  color: var(--ll-ink) !important;
+  background-image:
+    linear-gradient(to right, rgba(160, 150, 135, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(160, 150, 135, 0.14) 1px, transparent 1px) !important;
+  background-size: 26px 26px !important;
+}
+
+.dark[data-theme="looseleaf"] body,
+[data-theme="looseleaf"].dark body {
+  background-color: var(--ll-desk) !important;
+  color: var(--ll-ink) !important;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px) !important;
+  background-size: 26px 26px !important;
+}
+
+/* Washi Tape Accent */
+.ll-tape-strip {
+  display: none;
+}
+[data-theme="looseleaf"] .ll-tape-strip {
+  display: block;
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-1.5deg);
+  width: 48px;
+  height: 14px;
+  background-color: var(--ll-tape);
+  border-left: 2px dashed var(--ll-tape-edge);
+  border-right: 2px dashed var(--ll-tape-edge);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  z-index: 15;
+}
+
+/* Looseleaf Header */
+[data-theme="looseleaf"] header {
+  background-color: var(--ll-paper) !important;
+  border-bottom: 2.5px solid var(--ll-pencil-mark) !important;
+  box-shadow: 0 2px 0px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Looseleaf Sidebar */
+[data-theme="looseleaf"] aside {
+  background-color: var(--ll-pad) !important;
+  border-right: 2.5px solid var(--ll-pencil-mark) !important;
+  box-shadow: 2px 0px 0px rgba(0, 0, 0, 0.04) !important;
+  position: sticky;
+}
+
+[data-theme="looseleaf"] aside::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 6px;
+  width: 8px;
+  background-image: radial-gradient(circle, var(--ll-pencil-mark) 2.5px, transparent 3px);
+  background-size: 8px 30px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* Looseleaf Cards: Organic Sketch Outlines & Solid Drop Shadows */
+[data-theme="looseleaf"] .bookmark-card {
+  background-color: var(--ll-card) !important;
+  border: 2px solid var(--ll-pencil-mark) !important;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px !important;
+  box-shadow: var(--ll-shadow-card) !important;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+[data-theme="looseleaf"] .bookmark-card:hover {
+  transform: translateY(-3px) rotate(-0.35deg) !important;
+  box-shadow: var(--ll-shadow-hover) !important;
+}
+
+[data-theme="looseleaf"] .bookmark-card:active {
+  transform: translate(2px, 2px) !important;
+  box-shadow: 1px 1px 0px var(--ll-ink) !important;
+}
+
+/* Looseleaf List Row */
+[data-theme="looseleaf"] .bookmark-list-row {
+  background-color: var(--ll-card) !important;
+  border: 2px solid var(--ll-pencil-mark) !important;
+  border-radius: 255px 10px 225px 10px / 10px 225px 10px 255px !important;
+  box-shadow: var(--ll-shadow-btn) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+[data-theme="looseleaf"] .bookmark-list-row:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--ll-shadow-card) !important;
+}
+
+/* Looseleaf Buttons */
+[data-theme="looseleaf"] button:not(.btn-unstyled) {
+  border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+}
+
+[data-theme="looseleaf"] button:active:not(.btn-unstyled) {
+  transform: translate(1.5px, 1.5px);
+}
+
+/* Looseleaf Primary Action Buttons */
+[data-theme="looseleaf"] .bg-neutral-900,
+[data-theme="looseleaf"] .dark .bg-neutral-100 {
+  background-color: var(--ll-marker) !important;
+  color: #fff !important;
+  border: 2px solid var(--ll-pencil-mark) !important;
+  box-shadow: var(--ll-shadow-btn) !important;
+}
+
+/* Looseleaf Inputs & Search */
+[data-theme="looseleaf"] input,
+[data-theme="looseleaf"] textarea,
+[data-theme="looseleaf"] select {
+  background-color: var(--ll-paper) !important;
+  border: 2px solid var(--ll-pencil-mark) !important;
+  border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px !important;
+  color: var(--ll-ink) !important;
+}
+
+[data-theme="looseleaf"] input:focus,
+[data-theme="looseleaf"] textarea:focus,
+[data-theme="looseleaf"] select:focus {
+  outline: none !important;
+  border-color: var(--ll-marker) !important;
+  box-shadow: 2px 2px 0px var(--ll-marker) !important;
+}
+
+/* Looseleaf Modals / Folios */
+[data-theme="looseleaf"] .bg-white.dark\:bg-neutral-900.rounded-2xl,
+[data-theme="looseleaf"] .bg-white.dark\:bg-neutral-900.rounded-3xl,
+[data-theme="looseleaf"] [role="dialog"] > div:last-child {
+  background-color: var(--ll-card) !important;
+  border: 2.5px solid var(--ll-pencil-mark) !important;
+  border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px !important;
+  box-shadow: 6px 8px 0px var(--ll-ink) !important;
+}
+
+/* Looseleaf Tag / Filter Badges (Highlighter Marker Style) */
+[data-theme="looseleaf"] .rounded-full.border,
+[data-theme="looseleaf"] .rounded-lg.border {
+  border-radius: 255px 12px 225px 12px / 12px 225px 12px 255px;
+}
+
+/* Looseleaf Mobile Navigation Bar */
+[data-theme="looseleaf"] .pb-safe {
+  background-color: var(--ll-paper) !important;
+  border-top: 2.5px solid var(--ll-pencil-mark) !important;
+}
+
+/* Looseleaf Exploration Mode Cards & Folio */
+[data-theme="looseleaf"] .exploration-card {
+  background-color: var(--ll-card) !important;
+  border: 2px solid var(--ll-pencil-mark) !important;
+  border-radius: 255px 14px 225px 14px / 14px 225px 14px 255px !important;
+  box-shadow: var(--ll-shadow-btn) !important;
+}
+
+
+

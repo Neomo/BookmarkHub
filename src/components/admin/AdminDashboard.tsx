@@ -33,6 +33,8 @@ interface AdminDashboardProps {
   onEditBookmark: (bookmark: Bookmark) => void;
   onShowQrCode?: (bookmark: Bookmark) => void;
   initialTab?: AdminTab;
+  themeStyle?: 'modern' | 'looseleaf';
+  onApplyThemeStyle?: (style: 'modern' | 'looseleaf') => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -48,6 +50,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onEditBookmark,
   onShowQrCode,
   initialTab = 'categories',
+  themeStyle = 'modern',
+  onApplyThemeStyle,
 }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
 
@@ -222,6 +226,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               onUpdateSettings={onUpdateSettings}
               currentTheme={currentTheme}
               onApplyTheme={onApplyTheme}
+              themeStyle={themeStyle}
+              onApplyThemeStyle={onApplyThemeStyle}
             />
           )}
 
